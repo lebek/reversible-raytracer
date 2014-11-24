@@ -1,5 +1,5 @@
 # Reversible Ray Tracer
-The Reversible Ray Tracer (RRT) is a program that takes a description of a 3D scene and outputs a picture of the scene. But it doesn’t end there. Say what you want to change about the output and RRT can backtrack to the inputs and update them to bring about the intended change.\
+The Reversible Ray Tracer (RRT) is a program that takes a description of a 3D scene and outputs a picture of the scene. But it doesn’t end there. Say what you want to change about the output and RRT can backtrack to the inputs and update them to bring about the intended change.
 
 ![Maximizing the brightness at a point](https://raw.githubusercontent.com/lebek/RRT/master/optimized.gif)
 
