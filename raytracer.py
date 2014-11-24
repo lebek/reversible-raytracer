@@ -11,28 +11,39 @@ o = T.dvector('o')
 
 # center of sphere
 c = T.dvector('c')
+c2 = T.dvector('c2')
 
 # radius of sphere
 r = T.dscalar('r')
+r2 = T.dscalar('r2')
 
 # light
 light = T.dvector('light')
 
-#v = T.dvector('v')
-#normalize = v / T.sqrt(T.dot(v, v))
+def sphere_hit(center, radius):
+    x = T.tensordot(L, (o - center), 1)
+    decider = T.sqr(x) - T.dot(o - center, o - center) + T.sqr(radius)
+    return decider
 
-x = T.tensordot(L, (o - c), 1)
-decider = T.sqr(x) - T.dot(o - c, o - c) + T.sqr(r)
-distance = -x - T.sqrt(decider)
+def sphere_dist(center, radius):
+    x = T.tensordot(L, (o - center), 1)
+    decider = sphere_hit(center, radius)
+    distance = -x - T.sqrt(decider)
+    distance_filter = T.switch(T.lt(0, decider), distance, 0)
+    return distance_filter
 
-distance_filter = T.switch(T.lt(0, decider), distance, 0) 
+def sphere_normals(center, radius):
+    distance = sphere_dist(center, radius)
+    sphere_projections = o + (distance.dimshuffle(0, 1, 'x') * L) - center
+    normals = sphere_projections / T.sqrt(T.sum(T.mul(sphere_projections, sphere_projections), 2)).dimshuffle(0,1,'x')
+    return normals
 
-sphere_projections = o + (distance_filter.dimshuffle(0, 1, 'x') * L) - c
-normals = sphere_projections / T.sqrt(T.sum(T.mul(sphere_projections, sphere_projections), 2)).dimshuffle(0,1,'x')
-shadings =  0.9* -T.tensordot(normals, light, 1)
-shadings_filter = T.switch(T.lt(0, shadings), shadings, 0)
+def diffuse_shading(normals):
+    shadings =  0.9*-T.tensordot(normals, light, 1)
+    shadings_filter = T.switch(T.lt(0, shadings), shadings, 0)
+    return shadings_filter
 
-intersect = T.switch(T.lt(0, decider), shadings_filter, 0)
+intersect = T.switch(T.lt(0, sphere_hit(c, r)), diffuse_shading(sphere_normals(c, r)), 0)
 
 f = theano.function([L, o, c, r, light], intersect, on_unused_input='ignore')
 
