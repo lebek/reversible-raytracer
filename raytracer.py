@@ -29,7 +29,7 @@ def sphere_dist(center, radius):
     x = T.tensordot(L, (o - center), 1)
     decider = sphere_hit(center, radius)
     distance = -x - T.sqrt(decider)
-    distance_filter = T.switch(T.lt(0, decider), distance, 0)
+    distance_filter = T.switch(T.lt(0, decider), distance, float('inf'))
     return distance_filter
 
 def sphere_normals(center, radius):
@@ -43,9 +43,12 @@ def diffuse_shading(normals):
     shadings_filter = T.switch(T.lt(0, shadings), shadings, 0)
     return shadings_filter
 
-intersect = T.switch(T.lt(0, sphere_hit(c, r)), diffuse_shading(sphere_normals(c, r)), 0)
+intersect = T.switch(T.lt(sphere_dist(c, r), sphere_dist(c2, r2)), 
+        diffuse_shading(sphere_normals(c, r)), 
+        diffuse_shading(sphere_normals(c2, r2)))
+intersect2 =  T.switch(T.lt(0, intersect), intersect, 0)
 
-f = theano.function([L, o, c, r, light], intersect, on_unused_input='ignore')
+f = theano.function([L, o, c, r, c2, r2, light], intersect, on_unused_input='ignore')
 
 x_dims = 512
 y_dims = 512
@@ -59,56 +62,8 @@ normalized_light =  light_dir/np.linalg.norm(light_dir)
 cam_origin = [0., 0., 0.]
 sphere_origin = [10., 0., 0.]
 
-output = f(rays, cam_origin, sphere_origin, 2, normalized_light)
+output = f(rays, cam_origin, sphere_origin, 3., [8., 2., 2.], 1.,  normalized_light)
 print output
-def advise(label, val):
-    if val < 0:
-        print 'Reduce %s' % (label,)
-    elif val > 0:
-        print 'Increase %s' % (label,)
-
-def advise3d(label, vec):
-    if vec[0] < 0:
-        print 'Reduce %s x-location' % (label,)
-    elif vec[0] > 0:
-        print 'Increase %s x-location' % (label,)
-
-    if vec[1] < 0:
-        print 'Reduce %s z-location' % (label,)
-    elif vec[1] > 0:
-        print 'Increase %s z-location' % (label,)
-
-    if vec[2] < 0:
-        print 'Reduce %s y-location' % (label,)
-    elif vec[2] > 0:
-        print 'Increase %s y-location' % (label,)
-
-def brighten_advise(x, y):
-    inputs = { o: [0.,0.,0.], c: [5.,0.,0.], r: 2., L: rays, light: normalized_light }
-
-    print "Calculating gradient w.r.t. radius..."
-    radius_grad = T.grad(intersect[y,x], r).eval(inputs)
-    print radius_grad
-
-    print "Calculating gradient w.r.t. camera origin..."
-    origin_grad = T.grad(intersect[y,x], o).eval(inputs)
-    print origin_grad
-
-    print "Calculating gradient w.r.t. sphere center..."
-    center_grad = T.grad(intersect[y,x], c).eval(inputs)
-    print center_grad
-
-    print "Calculating gradient w.r.t. light..."
-    light_grad = T.grad(intersect[y,x], light).eval(inputs)
-    print light_grad
-
-
-    print ""
-    print "To increase the brightness at this location:"
-    advise('radius', radius_grad)
-    advise3d('camera', origin_grad)
-    advise3d('sphere', center_grad)
-    print ""
 
 from matplotlib import pyplot as plt
 from matplotlib import animation
