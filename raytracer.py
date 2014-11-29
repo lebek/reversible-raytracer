@@ -42,7 +42,16 @@ def sphere_normals(center, radius):
     return normals
 
 def diffuse_shading(c, r):
-    shadings =  0.9*-T.tensordot(sphere_normals(c, r), light, 1)
+    shadings =  0.9*T.tensordot(sphere_normals(c, r), -light, 1)
+    shadings_filter = T.switch(shadings >= 0, shadings, 0)
+    return T.switch(T.isinf(sphere_dist(c, r)), 0, shadings_filter)
+
+def phong_shading(c, r):
+    diffuse_shadings =  0.8*T.tensordot(sphere_normals(c, r), -light, 1)
+    normals = sphere_normals(c, r)
+    rm = 2.0*(T.tensordot(normals, -light, 1).dimshuffle(0, 1, 'x'))*normals + light
+    specular_shadings = 0.3*(T.tensordot(rm, [1., 0., 0.], 1) ** 16)
+    shadings = diffuse_shadings + specular_shadings
     shadings_filter = T.switch(shadings >= 0, shadings, 0)
     return T.switch(T.isinf(sphere_dist(c, r)), 0, shadings_filter)
 
@@ -58,12 +67,12 @@ def shadows_and_shadings(center, radius):
     distance = sphere_dist(center, radius)
     dist_filt = T.switch(T.isinf(distance), 0, distance)
     with_shadows = T.switch(T.gt(shadows(dist_filt), 0), 0,
-            diffuse_shading(center, radius))
+            phong_shading(center, radius))
     return with_shadows
 
 intersect2 = T.switch(T.lt(sphere_dist(c, r), sphere_dist(c2, r2)), 
         shadows_and_shadings(c, r), 
-        diffuse_shading(c2, r2))
+        phong_shading(c2, r2))
 
 f = theano.function([L, o, c, r, c2, r2, light], intersect2, on_unused_input='ignore')
 
@@ -107,6 +116,8 @@ def gd(x, y):
         'sphere_origin_grad': 0,
     }
 
+    lr = 0.1
+
     radius_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x], r))
     light_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x], light))
     sphere_origin_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x], c))
@@ -120,8 +131,8 @@ def gd(x, y):
                 acc['curr_sphere_origin'], acc['curr_radius'], c2_o, c2_r, acc['curr_light'])
 
         #acc['curr_radius'] = acc['curr_radius'] + (0.01 * np.sign(acc['radius_grad']))
-        acc['curr_sphere_origin'] = acc['curr_sphere_origin'] + (0.008 * np.sign(acc['sphere_origin_grad']))
-        acc['curr_light'] = acc['curr_light'] + (0.008 * np.sign(acc['light_grad']))
+        acc['curr_sphere_origin'] = acc['curr_sphere_origin'] + (lr * acc['sphere_origin_grad'])
+        acc['curr_light'] = acc['curr_light'] + (lr * acc['light_grad'])
         acc['curr_light'] =  acc['curr_light']/np.linalg.norm(acc['curr_light'])
         print acc
 
@@ -130,7 +141,7 @@ def gd(x, y):
         im.set_data(output)
         return im
 
-    anim = animation.FuncAnimation(fig, step, frames=30,
+    anim = animation.FuncAnimation(fig, step, frames=4,
             fargs=(acc, radius_fn, light_fn, sphere_origin_fn),
             interval=0)._start()
 
