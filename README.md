@@ -18,9 +18,9 @@ Todo:
 * ~~Ray intersection with a sphere~~
 * ~~Lambertian shading~~
 * ~~Gradient descent optimization to maximize brightness at a point in the output~~
-* Support for multiple objects
-* Shadows
+* ~~Support for multiple objects~~
+* ~~Shadows~~
 * Color
-* Phong shading
+* ~~Phong shading~~
 * UI for selecting/defining a loss function
 * Ability to lock parameters before optimization
