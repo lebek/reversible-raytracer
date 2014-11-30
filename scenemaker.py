@@ -49,9 +49,21 @@ class PhongShader(Shader):
     def shade(self, scene_object, lights, camera):
         light = lights[0]
         normals = scene_object.normals(camera.rays)
-        shadings = T.clip(0.9*T.tensordot(normals, -light.direction, 1), 0, 1)
+
+        # diffuse (lambertian)
+        diffuse_shadings = self.kd*T.tensordot(normals, -light.direction, 1)
+
+        # specular
+        rm = 2.0*(T.tensordot(normals, -light.direction, 1).dimshuffle(
+            0, 1, 'x'))*normals + light.direction
+        specular_shadings = self.ks*(T.tensordot(rm, [1., 0., 0.], 1) ** 20)
+
+        # phong
+        phong_shadings = diffuse_shadings + specular_shadings
+
+        clipped = T.clip(phong_shadings, 0, 1)
         distances = scene_object.distance(camera.rays)
-        return T.switch(T.isinf(distances), 0, shadings)
+        return T.switch(T.isinf(distances), 0, clipped)
 
 
 class Scene:
