@@ -1,8 +1,7 @@
-
 import numpy as np
 import theano.tensor as T
 import theano
-from theano.ifelse import ifelse
+from copy import copy
 
 # rays
 L = T.dtensor3('L')
@@ -70,8 +69,8 @@ def shadows_and_shadings(center, radius):
             phong_shading(center, radius))
     return with_shadows
 
-intersect2 = T.switch(T.lt(sphere_dist(c, r), sphere_dist(c2, r2)), 
-        shadows_and_shadings(c, r), 
+intersect2 = T.switch(T.lt(sphere_dist(c, r), sphere_dist(c2, r2)),
+        shadows_and_shadings(c, r),
         phong_shading(c2, r2))
 
 f = theano.function([L, o, c, r, c2, r2, light], intersect2, on_unused_input='ignore')
@@ -90,65 +89,53 @@ sphere_origin = [10., 0., 0.]
 c2_o = [6., 1., 1.]
 c2_r = 1.
 
-output = f(rays, cam_origin, sphere_origin, 3., c2_o, c2_r,  normalized_light)
-print output
-
-from matplotlib import pyplot as plt
-from matplotlib import animation
-from skimage.measure import block_reduce
-import numpy, sys
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-#ax.imshow(block_reduce(output, (4, 4), np.mean), interpolation='nearest').set_cmap('bone')
-im = ax.imshow(output, interpolation='nearest')
-im.set_cmap('bone')
-im.set_clim(0.0,1.0)
+pleasant_defaults = {
+    'radius': 3.,
+    'light': normalized_light,
+    'sphere_origin': sphere_origin
+}
 
 
-def gd(x, y):
-    acc = {
-        'curr_radius': 3.,
-        'curr_light': normalized_light,
-        'curr_sphere_origin': sphere_origin,
-        'radius_grad': 0,
-        'light_grad': 0,
-        'sphere_origin_grad': 0,
-    }
+def render(params):
+    output = f(rays, cam_origin, params['sphere_origin'],
+            params['radius'], c2_o, c2_r,  params['light'])
+    return output
 
-    lr = 0.1
 
-    radius_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x], r))
+def optimize(params, x, y, lr, statusFn, maxIterations=30):
+    curr_params = copy(params)
+
+    #radius_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x], r))
+    statusFn('Optimizing light gradient function')
     light_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x], light))
+
+    statusFn('Optimizing sphere origin gradient function')
     sphere_origin_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x], c))
 
-    def step(i, acc, radius_fn, light_fn, sphere_origin_fn):
-        acc['radius_grad'] = radius_fn(rays, cam_origin, 
-                acc['curr_sphere_origin'], acc['curr_radius'], c2_o, c2_r, acc['curr_light'])
-        acc['light_grad'] = light_fn(rays, cam_origin, 
-                acc['curr_sphere_origin'], acc['curr_radius'], c2_o, c2_r, acc['curr_light'])
-        acc['sphere_origin_grad'] = sphere_origin_fn(rays, cam_origin, 
-                acc['curr_sphere_origin'], acc['curr_radius'], c2_o, c2_r, acc['curr_light'])
+    for i in range(maxIterations):
+        statusPrefix = '%d of %d: ' % (i, maxIterations)
+        loopStatus = lambda x: statusFn(statusPrefix + x)
+        args = (rays, cam_origin, curr_params['sphere_origin'],
+                curr_params['radius'], c2_o, c2_r, curr_params['light'])
 
-        #acc['curr_radius'] = acc['curr_radius'] + (0.01 * np.sign(acc['radius_grad']))
-        acc['curr_sphere_origin'] = acc['curr_sphere_origin'] + (lr * acc['sphere_origin_grad'])
-        acc['curr_light'] = acc['curr_light'] + (lr * acc['light_grad'])
-        acc['curr_light'] =  acc['curr_light']/np.linalg.norm(acc['curr_light'])
-        print acc
+        #radius_grad = radius_fn(*args)
+        loopStatus('Computing light gradient')
+        light_grad = light_fn(*args)
 
-        output = f(rays, cam_origin, acc['curr_sphere_origin'], acc['curr_radius'], 
-                c2_o, c2_r, acc['curr_light'])
-        im.set_data(output)
-        return im
+        loopStatus('Computing sphere origin gradient')
+        sphere_origin_grad = sphere_origin_fn(*args)
 
-    anim = animation.FuncAnimation(fig, step, frames=4,
-            fargs=(acc, radius_fn, light_fn, sphere_origin_fn),
-            interval=0)._start()
+        loopStatus('Updating parameters')
+        #curr_params['curr_radius'] = curr_params['curr_radius'] +
+        #    (lr * np.sign(curr_params['radius_grad']))
+        curr_params['sphere_origin'] = curr_params['sphere_origin'] + (lr * sphere_origin_grad)
+        curr_params['light'] = curr_params['light'] + (lr * light_grad)
+        curr_params['light'] = curr_params['light'] / np.linalg.norm(curr_params['light'])
+        print curr_params
 
-def onclick(event):
-    print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f'%(
-        event.button, event.x, event.y, event.xdata, event.ydata)
-    gd(int(event.xdata), int(event.ydata))
+        loopStatus('Rendering updated image')
+        output = f(*args)
 
-cid = fig.canvas.mpl_connect('button_press_event', onclick)
-plt.show()
+        yield (output, copy(curr_params))
+
+    statusFn('Max iteration reached')

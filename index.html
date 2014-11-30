@@ -1,0 +1,53 @@
+<label>Learning rate:</label>
+<input id="learning-rate" value="0.1" type="number" />
+<br /><br />
+<img id="output" style="cursor: pointer" onclick="optimize(event)" src="" />
+<p id="status"></p>
+<div id="target" style="position: absolute; top: -100px; left: -100px; color: red;">&times;</div>
+
+<script>
+var currentParams = {},
+    img = document.getElementById('output'),
+    statusEl = document.getElementById('status'),
+    target = document.getElementById('target');
+
+ws = new WebSocket('ws://localhost:8888/ws');
+ws.onmessage = function(evt) {
+  var message = JSON.parse(evt.data);
+
+  if (message.type === 'render') {
+    return handleRender(message);
+  } else if (message.type === 'status') {
+    return handleStatus(message);
+  }
+};
+ws.onclose = function(evt) { console.log('Connection close'); };
+
+function handleRender(message) {
+  var params = message.params,
+    image = message.image;
+
+  currentParams = params;
+  img.src = "data:image/png;base64," + image;
+}
+
+function handleStatus(message) {
+  statusEl.innerHTML = message.status;
+}
+
+function optimize(event) {
+  var learningRate = document.getElementById('learning-rate').value,
+    learningRate = parseFloat(learningRate);
+
+  target.style.top = event.clientY - 10;
+  target.style.left = event.clientX - 5;
+
+  ws.send(JSON.stringify({
+    params: currentParams,
+    x: event.offsetX,
+    y: event.offsetY,
+    lr: learningRate
+  }));
+}
+
+</script>
