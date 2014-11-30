@@ -23,5 +23,8 @@ Todo:
 * ~~Color~~
 * ~~Phong shading~~
 * Refactor to OO so possible to construct more complicated scenes
+* Momentum
+* Early-stopping
+* Approximate any binary decisions with differentiable functions
 * UI for selecting/defining a loss function
 * Ability to lock parameters before optimization
