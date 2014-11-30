@@ -20,7 +20,8 @@ Todo:
 * ~~Gradient descent optimization to maximize brightness at a point in the output~~
 * ~~Support for multiple objects~~
 * ~~Shadows~~
-* Color
+* ~~Color~~
 * ~~Phong shading~~
+* Refactor to OO so possible to construct more complicated scenes
 * UI for selecting/defining a loss function
 * Ability to lock parameters before optimization
