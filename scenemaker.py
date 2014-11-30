@@ -88,6 +88,14 @@ class Scene:
 
         variables, values = self.gather_varvals()
         f = theano.function(variables, image, on_unused_input='ignore')
+
+        for v in variables:
+            try:
+                print theano.function(variables, T.grad(image[300, 300], v),
+                                    on_unused_input='ignore')(*values)
+            except:
+                print 'failed to find gradient for', v
+
         return f(*values)
 
 
@@ -95,6 +103,7 @@ class RayField:
     def __init__(self, name, origin, rays):
         self.variables = VariableSet(name)
         self.origin = origin
+        self.rays = rays
         self.rays = self.variables.add(rays, 'rays')
 
 
@@ -176,14 +185,14 @@ class Sphere(SceneObject):
 material = Material('material', (1, 0, 0), 20)
 
 objs = [
-    Sphere('sphere 1', (10, 0, 0), 3, material),
-    Sphere('sphere 2', (6, 1, 1), 1, material),
-    Sphere('sphere 3', (5, -1, 1), 1, material)
+    Sphere('sphere 1', (10., 0., 0.), 2., material),
+    Sphere('sphere 2', (6., 1., 1.), 1., material),
+    Sphere('sphere 3', (5., -1., 1.), 1., material)
 ]
 
-light = Light('light', (2, -1, -1), 1)
-camera = Camera('camera', (0, 0, 0), (1, 0, 0), 512, 512)
-shader = PhongShader('shader', 1, 1, 1)
+light = Light('light', (2., -1., -1.), 1.)
+camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 512, 512)
+shader = PhongShader('shader', 1., 1., 1.)
 scene = Scene(objs, [light], camera, shader)
 
 image = scene.render()
