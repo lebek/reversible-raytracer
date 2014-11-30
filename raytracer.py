@@ -46,13 +46,15 @@ def diffuse_shading(c, r):
     return T.switch(T.isinf(sphere_dist(c, r)), 0, shadings_filter)
 
 def phong_shading(c, r):
-    diffuse_shadings =  0.8*T.tensordot(sphere_normals(c, r), -light, 1)
+    diffuse_shadings = 0.9*T.tensordot(sphere_normals(c, r), -light, 1)
     normals = sphere_normals(c, r)
     rm = 2.0*(T.tensordot(normals, -light, 1).dimshuffle(0, 1, 'x'))*normals + light
-    specular_shadings = 0.3*(T.tensordot(rm, [1., 0., 0.], 1) ** 16)
+    specular_shadings = 0.4*(T.tensordot(rm, [1., 0., 0.], 1) ** 20)
     shadings = diffuse_shadings + specular_shadings
     shadings_filter = T.switch(shadings >= 0, shadings, 0)
-    return T.switch(T.isinf(sphere_dist(c, r)), 0, shadings_filter)
+    # switch to color starts here
+    colors = shadings_filter.dimshuffle(0, 1, 'x') * T.as_tensor_variable([1., 0., 0.]).dimshuffle('x', 'x', 0) * T.alloc(1., 512, 512, 1)
+    return T.switch(T.isinf(sphere_dist(c, r).dimshuffle(0, 1, 'x')), [0., 0., 0.], colors)
 
 # shadow of c2 on c1
 def shadows(distances):
@@ -65,11 +67,12 @@ def shadows(distances):
 def shadows_and_shadings(center, radius):
     distance = sphere_dist(center, radius)
     dist_filt = T.switch(T.isinf(distance), 0, distance)
-    with_shadows = T.switch(T.gt(shadows(dist_filt), 0), 0,
+    # switch to color starts here
+    with_shadows = T.switch(T.gt(shadows(dist_filt).dimshuffle(0, 1, 'x'), 0), [0., 0., 0.],
             phong_shading(center, radius))
     return with_shadows
 
-intersect2 = T.switch(T.lt(sphere_dist(c, r), sphere_dist(c2, r2)),
+intersect2 = T.switch(T.lt(sphere_dist(c, r).dimshuffle(0, 1, 'x'), sphere_dist(c2, r2).dimshuffle(0, 1, 'x')),
         shadows_and_shadings(c, r),
         phong_shading(c2, r2))
 
@@ -107,10 +110,10 @@ def optimize(params, x, y, lr, statusFn, maxIterations=30):
 
     #radius_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x], r))
     statusFn('Optimizing light gradient function')
-    light_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x], light))
+    light_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x,0], light))
 
     statusFn('Optimizing sphere origin gradient function')
-    sphere_origin_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x], c))
+    sphere_origin_fn = theano.function([L, o, c, r, c2, r2, light], T.grad(intersect2[y,x,0], c))
 
     for i in range(maxIterations):
         statusPrefix = '%d of %d: ' % (i, maxIterations)
