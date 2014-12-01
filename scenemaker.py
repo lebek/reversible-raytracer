@@ -62,8 +62,9 @@ class PhongShader(Shader):
         phong_shadings = diffuse_shadings + specular_shadings
 
         clipped = T.clip(phong_shadings, 0, 1)
+        colorized = clipped.dimshuffle(0, 1, 'x') * T.as_tensor_variable(scene_object.material.color).dimshuffle('x', 'x', 0) * T.alloc(1., 512, 512, 1)
         distances = scene_object.distance(camera.rays)
-        return T.switch(T.isinf(distances), 0, clipped)
+        return T.switch(T.isinf(distances), [0., 0., 0.], colorized)
 
 
 class Scene:
@@ -90,23 +91,23 @@ class Scene:
         return (variables, values)
 
     def render(self):
-        image = T.alloc(0, self.camera.x_dims, self.camera.y_dims)
+        image = T.alloc(0, self.camera.x_dims, self.camera.y_dims, 1)
         min_dists = T.fill(image, float('inf'))
         for obj in self.objects:
             dists = obj.distance(self.camera.rays)
             shadings = self.shader.shade(obj, self.lights, self.camera)
-            image = T.switch(dists < min_dists, shadings, image)
+            image = T.switch((dists < min_dists).dimshuffle(0, 1, 'x'), shadings, image)
             min_dists = T.switch(dists < min_dists, dists, min_dists)
 
         variables, values = self.gather_varvals()
         f = theano.function(variables, image, on_unused_input='ignore')
 
-        for v in variables:
-            try:
-                print theano.function(variables, T.grad(image[300, 300], v),
-                                    on_unused_input='ignore')(*values)
-            except:
-                print 'failed to find gradient for', v
+        #for v in variables:
+        #    try:
+        #        print theano.function(variables, T.grad(image[300, 300], v),
+        #                            on_unused_input='ignore')(*values)
+        #    except:
+        #        print 'failed to find gradient for', v
 
         return f(*values)
 
@@ -164,6 +165,7 @@ class Sphere(SceneObject):
         self.center = self.variables.add(center, 'center')
         self.radius = self.variables.add(radius, 'radius')
         self.material = material
+        self.variables.add_child(material.variables)
 
     def _hit(self, ray_field):
         x = ray_field.origin - self.center
@@ -194,17 +196,19 @@ class Sphere(SceneObject):
             T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
         return normals
 
-material = Material('material', (1, 0, 0), 20)
+material1 = Material('material 1', (1., 0., 0.), 20.)
+material2 = Material('material 2', (0., 1., 0.), 20.)
+material3 = Material('material 3', (0., 0., 1.), 20.)
 
 objs = [
-    Sphere('sphere 1', (10., 0., 0.), 2., material),
-    Sphere('sphere 2', (6., 1., 1.), 1., material),
-    Sphere('sphere 3', (5., -1., 1.), 1., material)
+    Sphere('sphere 1', (10., 0., 0.), 2., material1),
+    Sphere('sphere 2', (6., 1., 1.), 1., material2),
+    Sphere('sphere 3', (5., -1., 1.), 1., material3)
 ]
 
-light = Light('light', (2., -1., -1.), 1.)
+light = Light('light', (2., -1., -1.), (1., 1., 1.))
 camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 512, 512)
-shader = PhongShader('shader', 1., 1., 1.)
+shader = PhongShader('shader', .9, .4, 1.)
 scene = Scene(objs, [light], camera, shader)
 
 image = scene.render()
