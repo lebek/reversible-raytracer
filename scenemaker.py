@@ -3,6 +3,10 @@ import theano.tensor as T
 import theano
 
 
+def broadcasted_switch(a, b, c):
+    return T.switch(a.dimshuffle(0, 1, 'x'), b, c)
+
+
 class VariableSet:
 
     def __init__(self, name):
@@ -35,36 +39,32 @@ class Shader:
 
 class PhongShader(Shader):
 
-    def __init__(self, name, ks, kd, ka):
-        """
-        ks -- specular reflection constant
-        kd -- diffuse reflection constant
-        ka -- ambient reflection constant
-        """
+    def __init__(self, name):
         self.variables = VariableSet(name)
-        self.ks = self.variables.add(ks, 'ks')
-        self.kd = self.variables.add(kd, 'kd')
-        self.ka = self.variables.add(ka, 'ka')
 
     def shade(self, scene_object, lights, camera):
         light = lights[0]
+        material = scene_object.material
         normals = scene_object.normals(camera.rays)
 
+        ambient_light = 0.1
+
         # diffuse (lambertian)
-        diffuse_shadings = self.kd*T.tensordot(normals, -light.direction, 1)
+        diffuse_shadings = material.kd*T.tensordot(normals, -light.direction, 1)
 
         # specular
         rm = 2.0*(T.tensordot(normals, -light.direction, 1).dimshuffle(
             0, 1, 'x'))*normals + light.direction
-        specular_shadings = self.ks*(T.tensordot(rm, [1., 0., 0.], 1) ** 20)
+        specular_shadings = material.ks*(T.tensordot(rm, camera.look_at, 1) ** material.shininess)
 
         # phong
-        phong_shadings = diffuse_shadings + specular_shadings
+        phong_shadings = ambient_light + diffuse_shadings + specular_shadings
+        
+        colorized = phong_shadings.dimshuffle(0, 1, 'x') * material.color.dimshuffle('x', 'x', 0) * light.intensity.dimshuffle('x', 'x', 0)
+        clipped = T.clip(colorized, 0, 1)
 
-        clipped = T.clip(phong_shadings, 0, 1)
-        colorized = clipped.dimshuffle(0, 1, 'x') * T.as_tensor_variable(scene_object.material.color).dimshuffle('x', 'x', 0) * T.alloc(1., 512, 512, 1)
         distances = scene_object.distance(camera.rays)
-        return T.switch(T.isinf(distances), [0., 0., 0.], colorized)
+        return broadcasted_switch(T.isinf(distances), [0., 0., 0.], clipped)
 
 
 class Scene:
@@ -91,12 +91,12 @@ class Scene:
         return (variables, values)
 
     def render(self):
-        image = T.alloc(0, self.camera.x_dims, self.camera.y_dims, 1)
-        min_dists = T.fill(image, float('inf'))
+        image = T.alloc(0, self.camera.x_dims, self.camera.y_dims, 3)
+        min_dists = T.alloc(float('inf'), self.camera.x_dims, self.camera.y_dims)
         for obj in self.objects:
             dists = obj.distance(self.camera.rays)
             shadings = self.shader.shade(obj, self.lights, self.camera)
-            image = T.switch((dists < min_dists).dimshuffle(0, 1, 'x'), shadings, image)
+            image = broadcasted_switch(dists < min_dists, shadings, image)
             min_dists = T.switch(dists < min_dists, dists, min_dists)
 
         variables, values = self.gather_varvals()
@@ -148,8 +148,17 @@ class Light:
 
 
 class Material:
-    def __init__(self, name, color, shininess):
+    def __init__(self, name, color, ks, kd, ka, shininess):
+        """
+        ks -- specular reflection constant
+        kd -- diffuse reflection constant
+        ka -- ambient reflection constant
+        shininess -- shininess constant
+        """
         self.variables = VariableSet(name)
+        self.ks = self.variables.add(ks, 'ks')
+        self.kd = self.variables.add(kd, 'kd')
+        self.ka = self.variables.add(ka, 'ka')
         self.color = self.variables.add(color, 'color')
         self.shininess = self.variables.add(shininess, 'shininess')
 
@@ -196,19 +205,19 @@ class Sphere(SceneObject):
             T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
         return normals
 
-material1 = Material('material 1', (1., 0., 0.), 20.)
-material2 = Material('material 2', (0., 1., 0.), 20.)
-material3 = Material('material 3', (0., 0., 1.), 20.)
+material1 = Material('material 1', (1., 1., 1.), 0.0, 0.9, 0., 20.)
+material2 = Material('material 2', (0.87, 0., 0.507), 0.5, 0.9, 0., 20.)
+material3 = Material('material 3', (0., 0., 1.), 0.5, 0.9, 0., 20.)
 
 objs = [
-    Sphere('sphere 1', (10., 0., 0.), 2., material1),
+    Sphere('sphere 1', (10., 0., -1.), 2., material1),
     Sphere('sphere 2', (6., 1., 1.), 1., material2),
     Sphere('sphere 3', (5., -1., 1.), 1., material3)
 ]
 
-light = Light('light', (2., -1., -1.), (1., 1., 1.))
+light = Light('light', (2., -1., -1.), (0.87, 0.961, 1.))
 camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 512, 512)
-shader = PhongShader('shader', .9, .4, 1.)
+shader = PhongShader('shader')
 scene = Scene(objs, [light], camera, shader)
 
 image = scene.render()
