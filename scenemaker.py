@@ -1,6 +1,7 @@
 import numpy as np
 import theano.tensor as T
 import theano
+import copy
 
 
 def broadcasted_switch(a, b, c):
@@ -27,7 +28,7 @@ class VariableSet:
         self.children.append(child)
 
     def get(self):
-        variables = self.variables
+        variables = copy.copy(self.variables)
         for c in self.children:
             variables.extend(c.get())
         return variables
@@ -43,11 +44,13 @@ class PhongShader(Shader):
         self.variables = VariableSet(name)
 
     def shade(self, scene_object, lights, camera):
+        # Since our material params are 1d we calculate bw shadings first and 
+        # convert to color after
         light = lights[0]
         material = scene_object.material
         normals = scene_object.normals(camera.rays)
 
-        ambient_light = 0.1
+        ambient_light = material.ka
 
         # diffuse (lambertian)
         diffuse_shadings = material.kd*T.tensordot(normals, -light.direction, 1)
@@ -90,7 +93,7 @@ class Scene:
         values = [v[1] for v in varvals]
         return (variables, values)
 
-    def render(self):
+    def build(self):
         image = T.alloc(0, self.camera.x_dims, self.camera.y_dims, 3)
         min_dists = T.alloc(float('inf'), self.camera.x_dims, self.camera.y_dims)
         for obj in self.objects:
@@ -100,17 +103,20 @@ class Scene:
             min_dists = T.switch(dists < min_dists, dists, min_dists)
 
         variables, values = self.gather_varvals()
+
+        grad_fns = []
+        for idx, var in enumerate(variables):
+            grad_fns.append(theano.function(variables, T.grad(image[64, 64, 1], var),
+                                            on_unused_input='ignore', allow_input_downcast=True))
+
+
+        return variables, values, image, grad_fns
+        
+    def render(self):
+        variables, values, image, _ = self.build()
         f = theano.function(variables, image, on_unused_input='ignore')
-
-        #for v in variables:
-        #    try:
-        #        print theano.function(variables, T.grad(image[300, 300], v),
-        #                            on_unused_input='ignore')(*values)
-        #    except:
-        #        print 'failed to find gradient for', v
-
         return f(*values)
-
+            
 
 class RayField:
     def __init__(self, name, origin, rays):
@@ -205,9 +211,9 @@ class Sphere(SceneObject):
             T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
         return normals
 
-material1 = Material('material 1', (1., 1., 1.), 0.0, 0.9, 0., 20.)
-material2 = Material('material 2', (0.87, 0., 0.507), 0.5, 0.9, 0., 20.)
-material3 = Material('material 3', (0., 0., 1.), 0.5, 0.9, 0., 20.)
+material1 = Material('material 1', (0.2, 0.3, 0.4), 0.0, 0.1, 0.1, 10.)
+material2 = Material('material 2', (0.87, 0., 0.507), 0.3, 0.9, 0.4, 40.)
+material3 = Material('material 3', (0.2, 0.3, 1.), 0.8, 0.9, 0.5, 60.)
 
 objs = [
     Sphere('sphere 1', (10., 0., -1.), 2., material1),
@@ -216,11 +222,35 @@ objs = [
 ]
 
 light = Light('light', (2., -1., -1.), (0.87, 0.961, 1.))
-camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 512, 512)
+camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 128, 128)
 shader = PhongShader('shader')
 scene = Scene(objs, [light], camera, shader)
 
-image = scene.render()
+variables, values, image, grad_fns = scene.build()
+render = theano.function(variables, image, on_unused_input='ignore')(*values)
 
-import scipy
-scipy.misc.imsave('render.png', image)
+def optimize_step(variables, image, grad_fns, values):
+    for idx, var in enumerate(variables):
+        grad = grad_fns[idx](*values)
+        if var.name == "ray field -> rays" or np.isnan(grad).any():
+            print "skip grad"
+            continue
+        print var.name, grad
+        values[idx] = values[idx] + 0.1 * grad
+            
+        if "center" not in var.name and "direction" not in var.name and "radius" not in var.name:
+            values[idx] = np.array(values[idx]).clip(0,1)
+
+        print values[idx]
+        print ""
+        
+    return values
+
+
+def optimize(x, y, lr, statusFn, maxIterations=30):
+    global values
+    for i in range(maxIterations):
+        values = optimize_step(variables, image, grad_fns, values)
+        render = theano.function(variables, image, on_unused_input='ignore', allow_input_downcast=True)(*values)
+        yield (render, {})
+

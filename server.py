@@ -4,7 +4,7 @@ import tornado.ioloop
 import tornado.web
 import json
 
-from raytracer import render, optimize, pleasant_defaults
+from scenemaker import render, optimize
 from scipy.misc import toimage
 import StringIO
 import numpy
@@ -16,12 +16,15 @@ class NumpyAwareJSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 class WSHandler(tornado.websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        return True
+
     def open(self):
         print 'new connection'
-        self.send_render(render(pleasant_defaults), pleasant_defaults)
+        self.send_render(render, {})
 
     def optimize(self, params, x, y, lr):
-        for step in optimize(params, x, y, lr, self.send_status):
+        for step in optimize(x, y, lr, self.send_status):
             self.send_render(step[0], step[1])
 
     def send_render(self, image, params):
