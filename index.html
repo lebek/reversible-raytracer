@@ -6,8 +6,7 @@
 <div id="target" style="position: absolute; top: -100px; left: -100px; color: red;">&times;</div>
 
 <script>
-var currentParams = {},
-    img = document.getElementById('output'),
+var img = document.getElementById('output'),
     statusEl = document.getElementById('status'),
     target = document.getElementById('target');
 
@@ -24,10 +23,7 @@ ws.onmessage = function(evt) {
 ws.onclose = function(evt) { console.log('Connection close'); };
 
 function handleRender(message) {
-  var params = message.params,
-    image = message.image;
-
-  currentParams = params;
+  var image = message.image;
   img.src = "data:image/png;base64," + image;
 }
 
@@ -43,7 +39,6 @@ function optimize(event) {
   target.style.left = event.clientX - 5;
 
   ws.send(JSON.stringify({
-    params: currentParams,
     x: event.offsetX,
     y: event.offsetY,
     lr: learningRate

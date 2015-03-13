@@ -18,9 +18,11 @@ class VariableSet:
     def _as_var(self, value, name):
         return T.as_tensor_variable(value).type.make_variable(name)
 
-    def add(self, value, label):
+    def add(self, value, label, low_bound=-np.inf, up_bound=np.inf):
         name = '%s -> %s' % (self.name, label)
         variable = self._as_var(value, name)
+        variable.low_bound = low_bound
+        variable.up_bound = up_bound
         self.variables.append((variable, value))
         return variable
 
@@ -103,20 +105,13 @@ class Scene:
             min_dists = T.switch(dists < min_dists, dists, min_dists)
 
         variables, values = self.gather_varvals()
-
-        grad_fns = []
-        for idx, var in enumerate(variables):
-            grad_fns.append(theano.function(variables, T.grad(image[64, 64, 1], var),
-                                            on_unused_input='ignore', allow_input_downcast=True))
-
-
-        return variables, values, image, grad_fns
+        
+        return variables, values, image
         
     def render(self):
-        variables, values, image, _ = self.build()
+        variables, values, image = self.build()
         f = theano.function(variables, image, on_unused_input='ignore')
         return f(*values)
-            
 
 class RayField:
     def __init__(self, name, origin, rays):
@@ -150,7 +145,7 @@ class Light:
         self.variables = VariableSet(name)
         self.direction = self.variables.add(
             direction/np.linalg.norm(direction), 'direction')
-        self.intensity = self.variables.add(intensity, 'intensity')
+        self.intensity = self.variables.add(intensity, 'intensity', 0, 1)
 
 
 class Material:
@@ -162,11 +157,11 @@ class Material:
         shininess -- shininess constant
         """
         self.variables = VariableSet(name)
-        self.ks = self.variables.add(ks, 'ks')
-        self.kd = self.variables.add(kd, 'kd')
-        self.ka = self.variables.add(ka, 'ka')
-        self.color = self.variables.add(color, 'color')
-        self.shininess = self.variables.add(shininess, 'shininess')
+        self.ks = self.variables.add(ks, 'ks', 0, 1)
+        self.kd = self.variables.add(kd, 'kd', 0, 1)
+        self.ka = self.variables.add(ka, 'ka', 0, 1)
+        self.color = self.variables.add(color, 'color', 0, 1)
+        self.shininess = self.variables.add(shininess, 'shininess', 0, 1)
 
 
 class SceneObject:
@@ -177,8 +172,8 @@ class SceneObject:
 class Sphere(SceneObject):
     def __init__(self, name, center, radius, material):
         self.variables = VariableSet(name)
-        self.center = self.variables.add(center, 'center')
-        self.radius = self.variables.add(radius, 'radius')
+        self.center = self.variables.add(center, 'center', 0)
+        self.radius = self.variables.add(radius, 'radius', 0)
         self.material = material
         self.variables.add_child(material.variables)
 
@@ -211,46 +206,20 @@ class Sphere(SceneObject):
             T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
         return normals
 
-material1 = Material('material 1', (0.2, 0.3, 0.4), 0.0, 0.1, 0.1, 10.)
-material2 = Material('material 2', (0.87, 0., 0.507), 0.3, 0.9, 0.4, 40.)
-material3 = Material('material 3', (0.2, 0.3, 1.), 0.8, 0.9, 0.5, 60.)
+def simple_scene():
+    material1 = Material('material 1', (0.2, 0.3, 0.4), 0.2, 0.2, 0.2, 10.)
+    material2 = Material('material 2', (0.87, 0., 0.507), 0.3, 0.9, 0.4, 40.)
+    material3 = Material('material 3', (0.2, 0.3, 1.), 0.8, 0.9, 0.5, 60.)
 
-objs = [
-    Sphere('sphere 1', (10., 0., -1.), 2., material1),
-    Sphere('sphere 2', (6., 1., 1.), 1., material2),
-    Sphere('sphere 3', (5., -1., 1.), 1., material3)
-]
+    objs = [
+        Sphere('sphere 1', (10., 0., -1.), 2., material1),
+        Sphere('sphere 2', (6., 1., 1.), 1., material2),
+        Sphere('sphere 3', (5., -1., 1.), 1., material3)
+    ]
 
-light = Light('light', (2., -1., -1.), (0.87, 0.961, 1.))
-camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 128, 128)
-shader = PhongShader('shader')
-scene = Scene(objs, [light], camera, shader)
+    light = Light('light', (2., -1., -1.), (0.87, 0.961, 1.))
+    camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 128, 128)
+    shader = PhongShader('shader')
+    return Scene(objs, [light], camera, shader)
 
-variables, values, image, grad_fns = scene.build()
-render = theano.function(variables, image, on_unused_input='ignore')(*values)
-
-def optimize_step(variables, image, grad_fns, values):
-    for idx, var in enumerate(variables):
-        grad = grad_fns[idx](*values)
-        if var.name == "ray field -> rays" or np.isnan(grad).any():
-            print "skip grad"
-            continue
-        print var.name, grad
-        values[idx] = values[idx] + 0.1 * grad
-            
-        if "center" not in var.name and "direction" not in var.name and "radius" not in var.name:
-            values[idx] = np.array(values[idx]).clip(0,1)
-
-        print values[idx]
-        print ""
-        
-    return values
-
-
-def optimize(x, y, lr, statusFn, maxIterations=30):
-    global values
-    for i in range(maxIterations):
-        values = optimize_step(variables, image, grad_fns, values)
-        render = theano.function(variables, image, on_unused_input='ignore', allow_input_downcast=True)(*values)
-        yield (render, {})
 

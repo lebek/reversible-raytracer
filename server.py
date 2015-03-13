@@ -4,10 +4,21 @@ import tornado.ioloop
 import tornado.web
 import json
 
-from scenemaker import render, optimize
+from scenemaker import simple_scene
+from optimize import GDOptimizer
 from scipy.misc import toimage
 import StringIO
 import numpy
+import theano
+
+scene = simple_scene()
+opt = GDOptimizer(scene)
+
+print "Rendering initial scene"
+variables, values, image = scene.build()
+current = theano.function(variables, image, on_unused_input='ignore')(*values)
+print "Done"
+
 
 class NumpyAwareJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -21,17 +32,17 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
     def open(self):
         print 'new connection'
-        self.send_render(render, {})
+        self.send_render(current)
 
-    def optimize(self, params, x, y, lr):
-        for step in optimize(x, y, lr, self.send_status):
-            self.send_render(step[0], step[1])
+    def optimize(self, x, y, lr):
+        for step in opt.optimize(image[y, x].sum(), lr, self.send_status):
+            current = step
+            self.send_render(step)
 
-    def send_render(self, image, params):
+    def send_render(self, image):
         message = {
             'type': 'render',
-            'image': self.encode(image),
-            'params': params
+            'image': self.encode(image)
         }
 
         self.write_message(json.dumps(message, cls=NumpyAwareJSONEncoder))
@@ -53,7 +64,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         print 'message received %s' % message
         args = json.loads(message)
-        self.optimize(args['params'], args['x'], args['y'], args['lr'])
+        self.optimize(args['x'], args['y'], args['lr'])
 
     def on_close(self):
         print 'connection closed'
