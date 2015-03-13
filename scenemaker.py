@@ -9,6 +9,7 @@ def broadcasted_switch(a, b, c):
 
 
 class VariableSet:
+    """Holds metadata about variables used in theano functions"""
 
     def __init__(self, name):
         self.name = name
@@ -46,6 +47,8 @@ class PhongShader(Shader):
         self.variables = VariableSet(name)
 
     def shade(self, scene_object, lights, camera):
+        # See: http://en.wikipedia.org/wiki/Phong_reflection_model#Description
+
         # Since our material params are 1d we calculate bw shadings first and 
         # convert to color after
         light = lights[0]
@@ -80,6 +83,9 @@ class Scene:
         self.shader = shader
 
     def gather_varvals(self):
+        # collect all the theano variables from the scene graph
+        # -> we need it all in one place in order to call the top-level render 
+        # function
         varvals = []
 
         for o in self.objects:
@@ -96,8 +102,11 @@ class Scene:
         return (variables, values)
 
     def build(self):
+        # returns top-level render function and associated variables
         image = T.alloc(0, self.camera.x_dims, self.camera.y_dims, 3)
         min_dists = T.alloc(float('inf'), self.camera.x_dims, self.camera.y_dims)
+        
+        # for each object find its shadings and draw closer objects on top
         for obj in self.objects:
             dists = obj.distance(self.camera.rays)
             shadings = self.shader.shade(obj, self.lights, self.camera)
@@ -132,6 +141,9 @@ class Camera:
         self.variables.add_child(self.rays.variables)
 
     def make_rays(self, x_dims, y_dims):
+        # this should be rewritten in theano - currently we can't do any
+        # sensible optimization on camera parameters since we're calculating
+        # the ray field prior to entering theano (thus losing parameterisation)
         rays = np.dstack(np.meshgrid(np.linspace(0.5, -0.5, y_dims),
                          np.linspace(-0.5, 0.5, x_dims), indexing='ij'))
         rays = np.dstack([np.ones([y_dims, x_dims]), rays])
@@ -184,7 +196,8 @@ class Sphere(SceneObject):
         return determinent
 
     def distance(self, ray_field):
-        """Returns the distances along the rays that hits occur.
+        """
+        Returns the distances along the rays that hits occur.
 
         If no hit, returns inf.
         """
