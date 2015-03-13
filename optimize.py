@@ -4,11 +4,16 @@ import theano.tensor as T
 import theano
 
 class GDOptimizer:
+    """
+    Gradient Descent optimizer
+    """
     
     def __init__(self, scene):
         self.vars, self.vals, self.image = scene.build()
 
     def _step(self, grad_fns, lr):
+        """Move one step in the direction defined by grad_fns"""
+
         for idx, var in enumerate(self.vars):
             grad = grad_fns[idx](*self.vals)
             if var.name == "ray field -> rays" or np.isnan(grad).any():
@@ -26,7 +31,9 @@ class GDOptimizer:
         return self.vals
 
     def optimize(self, loss, lr, statusFn, maxIterations=5):
-        
+        """
+        Maximize the loss function with learning rate lr.
+        """
         statusFn("Building gradient functions...")
 
         grad_fns = []

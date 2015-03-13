@@ -1,6 +1,20 @@
 # Reversible Ray Tracer
 The Reversible Ray Tracer (RRT) is a program that takes a description of a 3D scene and outputs a picture of the scene. But it doesn’t end there. Say what you want to change about the output and RRT can backtrack to the inputs and update them to bring about the intended change.
 
+## Dependencies
+* numpy
+* scipy
+* theano
+* tornado
+
+## Usage
+```
+$ python server.py
+```
+
+Now open `index.html` in your browser. Click a point to maximize the brightness at that point.
+
+## How it works
 ![Maximizing the brightness at a point](https://raw.githubusercontent.com/lebek/RRT/master/demo-gifs/2.gif)
 
 The optimization works by gradient descent (or ascent). Here’s the algorithm:
@@ -15,16 +29,6 @@ The optimization works by gradient descent (or ascent). Here’s the algorithm:
 3. Continue until the loss stops improving much.
 
 Todo:
-* ~~Ray intersection with a sphere~~
-* ~~Lambertian shading~~
-* ~~Gradient descent optimization to maximize brightness at a point in the output~~
-* ~~Support for multiple objects~~
-* ~~Shadows~~
-* ~~Color~~
-* ~~Phong shading~~
-* Refactor to OO so possible to construct more complicated scenes
-* Momentum
-* Early-stopping
-* Approximate any binary decisions with differentiable functions
-* UI for selecting/defining a loss function
-* Ability to lock parameters before optimization
+* Shadows
+* More interesting loss functions
+
