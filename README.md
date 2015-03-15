@@ -9,13 +9,13 @@ The Reversible Ray Tracer (RRT) is a program that takes a description of a 3D sc
 
 ## Usage
 ```
-$ python server.py
+$ python optimize_brightness.py
 ```
 
-Now open `index.html` in your browser. Click a point to maximize the brightness at that point.
+The result is in `output/`
 
 ## How it works
-![Maximizing the brightness at a point](https://raw.githubusercontent.com/lebek/RRT/master/demo-gifs/2.gif)
+![Maximizing the brightness at 2 points](https://raw.githubusercontent.com/lebek/RRT/master/demo-gifs/3.gif)
 
 The optimization works by gradient descent (or ascent). Here’s the algorithm:
 
@@ -28,7 +28,4 @@ The optimization works by gradient descent (or ascent). Here’s the algorithm:
 
 3. Continue until the loss stops improving much.
 
-Todo:
-* Shadows
-* More interesting loss functions
 

@@ -58,11 +58,11 @@ class PhongShader(Shader):
         ambient_light = material.ka
 
         # diffuse (lambertian)
-        diffuse_shadings = material.kd*T.tensordot(normals, -light.direction, 1)
+        diffuse_shadings = material.kd*T.tensordot(normals, -light.normed_dir(), 1)
 
         # specular
-        rm = 2.0*(T.tensordot(normals, -light.direction, 1).dimshuffle(
-            0, 1, 'x'))*normals + light.direction
+        rm = 2.0*(T.tensordot(normals, -light.normed_dir(), 1).dimshuffle(
+            0, 1, 'x'))*normals + light.normed_dir()
         specular_shadings = material.ks*(T.tensordot(rm, camera.look_at, 1) ** material.shininess)
 
         # phong
@@ -110,6 +110,14 @@ class Scene:
         for obj in self.objects:
             dists = obj.distance(self.camera.rays)
             shadings = self.shader.shade(obj, self.lights, self.camera)
+
+            # TODO: for each object != obj, draw shadow of object on obj
+            for obj2 in self.objects:
+                if obj == obj2: continue
+                shadings = broadcasted_switch(obj2.shadow(
+                    obj.surface_pts(self.camera.rays), self.lights) < 0, 
+                                              shadings, [0., 0., 0.])
+
             image = broadcasted_switch(dists < min_dists, shadings, image)
             min_dists = T.switch(dists < min_dists, dists, min_dists)
 
@@ -159,6 +167,10 @@ class Light:
             direction/np.linalg.norm(direction), 'direction')
         self.intensity = self.variables.add(intensity, 'intensity', 0, 1)
 
+    def normed_dir(self):
+        d = self.direction
+        norm = T.sqrt(T.sqr(d[0]) + T.sqr(d[1]) + T.sqr(d[2]))
+        return d/norm
 
 class Material:
     def __init__(self, name, color, ks, kd, ka, shininess):
@@ -184,7 +196,7 @@ class SceneObject:
 class Sphere(SceneObject):
     def __init__(self, name, center, radius, material):
         self.variables = VariableSet(name)
-        self.center = self.variables.add(center, 'center', 0)
+        self.center = self.variables.add(center, 'center')
         self.radius = self.variables.add(radius, 'radius', 0)
         self.material = material
         self.variables.add_child(material.variables)
@@ -194,6 +206,25 @@ class Sphere(SceneObject):
         y = T.tensordot(ray_field.rays, x, 1)
         determinent = T.sqr(y) - T.dot(x, x) + T.sqr(self.radius)
         return determinent
+
+    def shadow(self, points, lights):
+        """
+        Returns whether points are in shadow of this object.
+
+        See: http://en.wikipedia.org/wiki/Line-sphere_intersection
+        """
+        y = points - self.center # vector from points to our center
+        x = T.tensordot(y, -1*lights[0].normed_dir(), 1)
+        decider = T.sqr(x) - T.sum(T.mul(y, y), 2) + T.sqr(self.radius)
+
+        # if shadow, below is >= 0
+        is_nan_or_nonpos = T.or_(T.isnan(decider), decider <= 0)
+        return T.switch(is_nan_or_nonpos, -1, -x - T.sqrt(decider))
+    
+    def surface_pts(self, ray_field):
+        distance = self.distance(ray_field)
+        stabilized = T.switch(T.isinf(distance), 1000, distance)
+        return ray_field.origin + (stabilized.dimshuffle(0, 1, 'x') * ray_field.rays)
 
     def distance(self, ray_field):
         """
@@ -220,9 +251,9 @@ class Sphere(SceneObject):
         return normals
 
 def simple_scene():
-    material1 = Material('material 1', (0.2, 0.3, 0.4), 0.2, 0.2, 0.2, 10.)
-    material2 = Material('material 2', (0.87, 0., 0.507), 0.3, 0.9, 0.4, 40.)
-    material3 = Material('material 3', (0.2, 0.3, 1.), 0.8, 0.9, 0.5, 60.)
+    material1 = Material('material 1', (0.2, 0.9, 0.4), 0.8, 0.7, 0.5, 40.)
+    material2 = Material('material 2', (0.87, 0.1, 0.507), 0.8, 0.9, 0.4, 60.)
+    material3 = Material('material 3', (0.2, 0.3, 1.), 0.8, 0.9, 0.4, 60.)
 
     objs = [
         Sphere('sphere 1', (10., 0., -1.), 2., material1),
