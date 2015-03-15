@@ -15,8 +15,6 @@ $ python optimize_brightness.py
 The result is in `output/`
 
 ## How it works
-![Maximizing the brightness at 2 points](https://raw.githubusercontent.com/lebek/RRT/master/demo-gifs/3.gif)
-
 The optimization works by gradient descent (or ascent). Here’s the algorithm:
 
 1. Define a loss function on the output.
