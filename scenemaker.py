@@ -163,8 +163,7 @@ class Camera:
 class Light:
     def __init__(self, name, direction, intensity):
         self.variables = VariableSet(name)
-        self.direction = self.variables.add(
-            direction/np.linalg.norm(direction), 'direction')
+        self.direction = self.variables.add(direction, 'direction')
         self.intensity = self.variables.add(intensity, 'intensity', 0, 1)
 
     def normed_dir(self):
