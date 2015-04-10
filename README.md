@@ -1,11 +1,10 @@
-# Reversible Ray Tracer
-The Reversible Ray Tracer (RRT) is a program that takes a description of a 3D scene and outputs a picture of the scene. But it doesn’t end there. Say what you want to change about the output and RRT can backtrack to the inputs and update them to bring about the intended change.
+# Reversible Raytracer
+Reversible Raytracer is a program that takes a description of a 3D scene and outputs a picture of the scene. But it doesn’t end there. Say what you want to change about the output and it can backtrack to the inputs and update them to bring about the intended change.
 
 ## Dependencies
 * numpy
 * scipy
 * theano
-* tornado
 
 ## Usage
 ```
@@ -25,5 +24,3 @@ The optimization works by gradient descent (or ascent). Here’s the algorithm:
   2. Update each input parameter proportionally to the gradient.
 
 3. Continue until the loss stops improving much.
-
-
