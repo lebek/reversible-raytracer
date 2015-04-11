@@ -17,7 +17,7 @@ class VariableSet:
         self.children = []
 
     def _as_var(self, value, name):
-        return T.as_tensor_variable(value).type.make_variable(name)
+        return theano.shared(value=np.asarray(value), name=name, borrow=True)
 
     def add(self, value, label, low_bound=-np.inf, up_bound=np.inf):
         name = '%s -> %s' % (self.name, label)
@@ -49,7 +49,7 @@ class PhongShader(Shader):
     def shade(self, scene_object, lights, camera):
         # See: http://en.wikipedia.org/wiki/Phong_reflection_model#Description
 
-        # Since our material params are 1d we calculate bw shadings first and 
+        # Since our material params are 1d we calculate bw shadings first and
         # convert to color after
         light = lights[0]
         material = scene_object.material
@@ -67,7 +67,7 @@ class PhongShader(Shader):
 
         # phong
         phong_shadings = ambient_light + diffuse_shadings + specular_shadings
-        
+
         colorized = phong_shadings.dimshuffle(0, 1, 'x') * material.color.dimshuffle('x', 'x', 0) * light.intensity.dimshuffle('x', 'x', 0)
         clipped = T.clip(colorized, 0, 1)
 
@@ -84,7 +84,7 @@ class Scene:
 
     def gather_varvals(self):
         # collect all the theano variables from the scene graph
-        # -> we need it all in one place in order to call the top-level render 
+        # -> we need it all in one place in order to call the top-level render
         # function
         varvals = []
 
@@ -105,30 +105,31 @@ class Scene:
         # returns top-level render function and associated variables
         image = T.alloc(0, self.camera.x_dims, self.camera.y_dims, 3)
         min_dists = T.alloc(float('inf'), self.camera.x_dims, self.camera.y_dims)
-        
+
         # for each object find its shadings and draw closer objects on top
         for obj in self.objects:
             dists = obj.distance(self.camera.rays)
             shadings = self.shader.shade(obj, self.lights, self.camera)
 
             # TODO: for each object != obj, draw shadow of object on obj
-            for obj2 in self.objects:
-                if obj == obj2: continue
-                shadings = broadcasted_switch(obj2.shadow(
-                    obj.surface_pts(self.camera.rays), self.lights) < 0, 
-                                              shadings, [0., 0., 0.])
+            #for obj2 in self.objects:
+            #    if obj == obj2: continue
+            #    shadings = broadcasted_switch(obj2.shadow(
+            #        obj.surface_pts(self.camera.rays), self.lights) < 0,
+            #                                  shadings, [0., 0., 0.])
 
             image = broadcasted_switch(dists < min_dists, shadings, image)
             min_dists = T.switch(dists < min_dists, dists, min_dists)
 
         variables, values = self.gather_varvals()
-        
+
         return variables, values, image
-        
+
     def render(self):
         variables, values, image = self.build()
         f = theano.function(variables, image, on_unused_input='ignore')
         return f(*values)
+
 
 class RayField:
     def __init__(self, name, origin, rays):
@@ -170,6 +171,7 @@ class Light:
         d = self.direction
         norm = T.sqrt(T.sqr(d[0]) + T.sqr(d[1]) + T.sqr(d[2]))
         return d/norm
+
 
 class Material:
     def __init__(self, name, color, ks, kd, ka, shininess):
@@ -218,8 +220,8 @@ class Sphere(SceneObject):
 
         # if shadow, below is >= 0
         is_nan_or_nonpos = T.or_(T.isnan(decider), decider <= 0)
-        return T.switch(is_nan_or_nonpos, -1, -x - T.sqrt(decider))
-    
+        return T.switch(is_nan_or_nonpos, 1, -x - T.sqrt(decider))
+
     def surface_pts(self, ray_field):
         distance = self.distance(ray_field)
         stabilized = T.switch(T.isinf(distance), 1000, distance)
@@ -249,10 +251,14 @@ class Sphere(SceneObject):
             T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
         return normals
 
+
 def simple_scene():
-    material1 = Material('material 1', (0.2, 0.9, 0.4), 0.8, 0.7, 0.5, 40.)
-    material2 = Material('material 2', (0.87, 0.1, 0.507), 0.8, 0.9, 0.4, 60.)
-    material3 = Material('material 3', (0.2, 0.3, 1.), 0.8, 0.9, 0.4, 60.)
+    material1 = Material('material 1', (0.2, 0.9, 0.4),
+                         0.8, 0.7, 0.5, 40.)
+    material2 = Material('material 2', (0.87, 0.1, 0.507),
+                         0.8, 0.9, 0.4, 60.)
+    material3 = Material('material 3', (0.2, 0.3, 1.),
+                         0.8, 0.9, 0.4, 60.)
 
     objs = [
         Sphere('sphere 1', (10., 0., -1.), 2., material1),
@@ -264,5 +270,3 @@ def simple_scene():
     camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 128, 128)
     shader = PhongShader('shader')
     return Scene(objs, [light], camera, shader)
-
-
