@@ -111,12 +111,12 @@ class Scene:
             dists = obj.distance(self.camera.rays)
             shadings = self.shader.shade(obj, self.lights, self.camera)
 
-            # TODO: for each object != obj, draw shadow of object on obj
-            #for obj2 in self.objects:
-            #    if obj == obj2: continue
-            #    shadings = broadcasted_switch(obj2.shadow(
-            #        obj.surface_pts(self.camera.rays), self.lights) < 0,
-            #                                  shadings, [0., 0., 0.])
+            # for each object != obj, draw shadow of object on obj
+            for obj2 in self.objects:
+                if obj == obj2: continue
+                shadings = broadcasted_switch(obj2.shadow(
+                    obj.surface_pts(self.camera.rays), self.lights) < 0,
+                                              shadings, [0., 0., 0.])
 
             image = broadcasted_switch(dists < min_dists, shadings, image)
             min_dists = T.switch(dists < min_dists, dists, min_dists)
@@ -220,7 +220,7 @@ class Sphere(SceneObject):
 
         # if shadow, below is >= 0
         is_nan_or_nonpos = T.or_(T.isnan(decider), decider <= 0)
-        return T.switch(is_nan_or_nonpos, 1, -x - T.sqrt(decider))
+        return T.switch(is_nan_or_nonpos, -1, -x - T.sqrt(decider))
 
     def surface_pts(self, ray_field):
         distance = self.distance(ray_field)
