@@ -41,6 +41,7 @@ class GDOptimizer:
         grads = T.grad(loss, self.vars)
         for var, gvar in zip(self.vars, grads):
             if self.locked(var): continue
+            #if 'center' not in var: continue
             update_vars.append((var, var - lr * gvar))
 
         train = theano.function([], loss, updates=update_vars)

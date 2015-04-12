@@ -17,7 +17,8 @@ class VariableSet:
         self.children = []
 
     def _as_var(self, value, name):
-        return theano.shared(value=np.asarray(value), name=name, borrow=True)
+        return theano.shared(value=np.asarray(value, dtype=theano.config.floatX), \
+                    name=name, borrow=True)
 
     def add(self, value, label, low_bound=-np.inf, up_bound=np.inf):
         name = '%s -> %s' % (self.name, label)
@@ -70,8 +71,8 @@ class PhongShader(Shader):
 
         colorized = phong_shadings.dimshuffle(0, 1, 'x') * material.color.dimshuffle('x', 'x', 0) * light.intensity.dimshuffle('x', 'x', 0)
         clipped = T.clip(colorized, 0, 1)
-
         distances = scene_object.distance(camera.rays)
+        import pdb; pdb.set_trace()
         return broadcasted_switch(T.isinf(distances), [0., 0., 0.], clipped)
 
 
@@ -132,12 +133,13 @@ class Scene:
 
 
 class RayField:
-    def __init__(self, name, origin, rays):
+    def __init__(self, name, origin, rays, x_dims, y_dims):
         self.variables = VariableSet(name)
         self.origin = origin
         self.rays = rays
         self.rays = self.variables.add(rays, 'rays')
-
+        self.x_dims = x_dims
+        self.y_dims = y_dims
 
 class Camera:
     def __init__(self, name, position, look_at, x_dims, y_dims):
@@ -158,7 +160,7 @@ class Camera:
         rays = np.dstack([np.ones([y_dims, x_dims]), rays])
         rays = np.divide(rays, np.linalg.norm(rays, axis=2).reshape(
             y_dims, x_dims, 1).repeat(3, 2))
-        return RayField('ray field', self.position, rays)
+        return RayField('ray field', self.position, rays, x_dims, y_dims)
 
 
 class Light:
@@ -192,6 +194,58 @@ class Material:
 class SceneObject:
     def __init__(self, name):
         pass
+
+
+class UnitSquare(SceneObject):
+    def __init__(self, name, material):
+        '''UnitSquare defined on the xy-plane, with vertices (0.5, 0.5, 0), 
+        (-0.5, 0.5, 0), (-0.5, -0.5, 0), (0.5, -0.5, 0), and normal (0, 0, 1).'''
+        
+        self.variables = VariableSet(name)
+        self.material = material
+        self.variables.add_child(material.variables)
+
+    def _hit(self, ray_field):
+    
+        mask_not_parallel_xy_plane = T.neq(ray_field.rays[:,:,2],0)
+        ts = -ray_field.origin[2] / ray_field.rays[:,:,2] #t is the 
+        mask_positive_t = T.gt(ts, 0) 
+        intersection = ray_field.origin + ts.dimshuffle(0, 1, 'x')* ray_field.rays
+        mask_interior_of_unitsquare = T.gt(intersection, -0.5) * T.lt(intersection,0.5)
+        mask = mask_interior_of_unitsquare * mask_positive_t.dimshuffle(0,1,'x')\
+                        * mask_not_parallel_xy_plane.dimshuffle(0,1,'x')
+   
+        all_falses = (1-mask)
+        intersection = T.switch(all_falses, float('inf'), intersection)
+        intersection = T.set_subtensor(intersection[:,:,2], T.zeros_like(ray_field.rays[:,:,2]))
+
+        return mask, intersection,ts
+    
+    
+    def distance(self, ray_field):
+    
+        """Returns the distances along the rays that hits occur.
+        If no hit, returns inf."""
+    
+        mask, intersection, ts = self._hit(ray_field)
+    
+        return ts #intersection
+    
+    def normals(self, ray_field):
+
+        mask, intersection,ts = self._hit(ray_field)
+        mask_positive_t = T.gt(ts, 0) 
+
+        pos_norm = np.tile( np.asarray([0.0,0.0,1.0]), \
+                 [ray_field.x_dims,ray_field.y_dims,1])
+        neg_norm = np.tile( np.asarray([0.0,0.0,-1.0]), \
+                 [ray_field.x_dims,ray_field.y_dims,1])
+                       
+        norm = pos_norm * mask_positive_t.dimshuffle(0,1,'x') \
+                            + neg_norm * ( 1-mask_positive_t).dimshuffle(0,1,'x')
+        norm = norm * mask 
+                                        
+        return norm
 
 
 class Sphere(SceneObject):
@@ -264,9 +318,12 @@ def simple_scene():
         Sphere('sphere 1', (10., 0., -1.), 2., material1),
         Sphere('sphere 2', (6., 1., 1.), 1., material2),
         Sphere('sphere 3', (5., -1., 1.), 1., material3)
+        #UnitSquare('square 1', material2)
     ]
 
     light = Light('light', (2., -1., -1.), (0.87, 0.961, 1.))
     camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 128, 128)
     shader = PhongShader('shader')
     return Scene(objs, [light], camera, shader)
+
+
