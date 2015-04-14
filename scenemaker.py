@@ -3,39 +3,11 @@ import theano.tensor as T
 import theano
 import copy
 
+from scene_object import *
+from variable_set import *
 
 def broadcasted_switch(a, b, c):
     return T.switch(a.dimshuffle(0, 1, 'x'), b, c)
-
-
-class VariableSet:
-    """Holds metadata about variables used in theano functions"""
-
-    def __init__(self, name):
-        self.name = name
-        self.variables = []
-        self.children = []
-
-    def _as_var(self, value, name):
-        return theano.shared(value=np.asarray(value, dtype=theano.config.floatX), \
-                    name=name, borrow=True)
-
-    def add(self, value, label, low_bound=-np.inf, up_bound=np.inf):
-        name = '%s -> %s' % (self.name, label)
-        variable = self._as_var(value, name)
-        variable.low_bound = low_bound
-        variable.up_bound = up_bound
-        self.variables.append((variable, value))
-        return variable
-
-    def add_child(self, child):
-        self.children.append(child)
-
-    def get(self):
-        variables = copy.copy(self.variables)
-        for c in self.children:
-            variables.extend(c.get())
-        return variables
 
 
 class Shader:
@@ -72,7 +44,6 @@ class PhongShader(Shader):
         colorized = phong_shadings.dimshuffle(0, 1, 'x') * material.color.dimshuffle('x', 'x', 0) * light.intensity.dimshuffle('x', 'x', 0)
         clipped = T.clip(colorized, 0, 1)
         distances = scene_object.distance(camera.rays)
-        import pdb; pdb.set_trace()
         return broadcasted_switch(T.isinf(distances), [0., 0., 0.], clipped)
 
 
@@ -111,13 +82,12 @@ class Scene:
         for obj in self.objects:
             dists = obj.distance(self.camera.rays)
             shadings = self.shader.shade(obj, self.lights, self.camera)
-
             # for each object != obj, draw shadow of object on obj
-            for obj2 in self.objects:
-                if obj == obj2: continue
-                shadings = broadcasted_switch(obj2.shadow(
-                    obj.surface_pts(self.camera.rays), self.lights) < 0,
-                                              shadings, [0., 0., 0.])
+            #for obj2 in self.objects:
+            #    if obj == obj2: continue
+            #    shadings = broadcasted_switch(obj2.shadow(
+            #        obj.surface_pts(self.camera.rays), self.lights) < 0,
+            #                                  shadings, [0., 0., 0.])
 
             image = broadcasted_switch(dists < min_dists, shadings, image)
             min_dists = T.switch(dists < min_dists, dists, min_dists)
@@ -130,6 +100,65 @@ class Scene:
         variables, values, image = self.build()
         f = theano.function(variables, image, on_unused_input='ignore')
         return f(*values)
+
+    def translate(self, sceneobject, trans):
+
+        translate = np.eye((4)); 
+        translate[0][3] = trans[0];
+        translate[1][3] = trans[1];
+        translate[2][3] = trans[2];
+        sceneobject.trans = translate
+        translate[0][3] = -trans[0];
+        translate[1][3] = -trans[1];
+        translate[2][3] = -trans[2];
+        sceneobject.invtrans = translate
+   
+    def scale(self, sceneobject, sc, origin):
+
+        scaleM = np.eye((3)); 
+        scaleM[0,0] = sc[0]; #  scaleM[0,3] = origin[0] - sc[0] * origin[0] 
+        scaleM[1,1] = sc[1]; #  scaleM[1,3] = origin[1] - sc[1] * origin[1] 
+        scaleM[2,2] = sc[2]; #  scaleM[2,3] = origin[2] - sc[2] * origin[2]
+        M1 = np.dot(sceneobject.trans, scaleM)
+        scaleM[0,0] = 1./sc[0];  # scaleM[0,3] = origin[0] - 1./sc[0] * origin[0] 
+        scaleM[1,1] = 1./sc[1];  # scaleM[1,3] = origin[1] - 1./sc[1] * origin[1] 
+        scaleM[2,2] = 1./sc[2];  # scaleM[2,3] = origin[2] - 1./sc[2] * origin[2]
+        M2 = np.dot(scaleM, sceneobject.trans)
+        return M1,M2
+
+    def rotate(self, sceneobject, axis, angle):
+
+        rotateM = np.eye((4));        
+        toRadian = 2*np.pi/360.0;
+
+        for i in xrange(2):
+            if axis=='x':
+                rotateM[0,0] = 1;
+                rotateM[1,1] = np.cos(angle*toRadian);
+                rotateM[1,2] = -np.sin(angle*toRadian);
+                rotateM[2,1] = np.sin(angle*toRadian);
+                rotateM[2,2] = np.cos(angle*toRadian);
+                rotateM[3,3] = 1;
+            elif axis=='y':
+                rotateM[0,0] = np.cos(angle*toRadian); 
+                rotateM[1,1] = np.sin(angle*toRadian);
+                rotateM[1,2] = 1; 
+                rotateM[2,1] = -np.sin(angle*toRadian);
+                rotateM[2,2] = np.cos(angle*toRadian);
+                rotateM[3,3] = 1;
+            elif axis=='z':
+                rotateM[0,0] = np.cos(angle*toRadian); 
+                rotateM[1,1] = -np.sin(angle*toRadian);
+                rotateM[1,2] = np.sin(angle*toRadian) 
+                rotateM[2,1] = np.cos(angle*toRadian);
+                rotateM[2,2] = 1 
+                rotateM[3,3] = 1
+            if i == 0:
+                sceneobject.trans = np.dot(sceneobject.trans, rotateM)
+                angle = -angle;
+            else:
+                sceneobject.invtrans = np.dot(rotateM, sceneobject.invtrans )
+
 
 
 class RayField:
@@ -191,121 +220,6 @@ class Material:
         self.shininess = self.variables.add(shininess, 'shininess', 0, 1)
 
 
-class SceneObject:
-    def __init__(self, name):
-        pass
-
-
-class UnitSquare(SceneObject):
-    def __init__(self, name, material):
-        '''UnitSquare defined on the xy-plane, with vertices (0.5, 0.5, 0), 
-        (-0.5, 0.5, 0), (-0.5, -0.5, 0), (0.5, -0.5, 0), and normal (0, 0, 1).'''
-        
-        self.variables = VariableSet(name)
-        self.material = material
-        self.variables.add_child(material.variables)
-
-    def _hit(self, ray_field):
-    
-        mask_not_parallel_xy_plane = T.neq(ray_field.rays[:,:,2],0)
-        ts = -ray_field.origin[2] / ray_field.rays[:,:,2] #t is the 
-        mask_positive_t = T.gt(ts, 0) 
-        intersection = ray_field.origin + ts.dimshuffle(0, 1, 'x')* ray_field.rays
-        mask_interior_of_unitsquare = T.gt(intersection, -0.5) * T.lt(intersection,0.5)
-        mask = mask_interior_of_unitsquare * mask_positive_t.dimshuffle(0,1,'x')\
-                        * mask_not_parallel_xy_plane.dimshuffle(0,1,'x')
-   
-        all_falses = (1-mask)
-        intersection = T.switch(all_falses, float('inf'), intersection)
-        intersection = T.set_subtensor(intersection[:,:,2], T.zeros_like(ray_field.rays[:,:,2]))
-
-        return mask, intersection,ts
-    
-    
-    def distance(self, ray_field):
-    
-        """Returns the distances along the rays that hits occur.
-        If no hit, returns inf."""
-    
-        mask, intersection, ts = self._hit(ray_field)
-    
-        return ts #intersection
-    
-    def normals(self, ray_field):
-
-        mask, intersection,ts = self._hit(ray_field)
-        mask_positive_t = T.gt(ts, 0) 
-
-        pos_norm = np.tile( np.asarray([0.0,0.0,1.0]), \
-                 [ray_field.x_dims,ray_field.y_dims,1])
-        neg_norm = np.tile( np.asarray([0.0,0.0,-1.0]), \
-                 [ray_field.x_dims,ray_field.y_dims,1])
-                       
-        norm = pos_norm * mask_positive_t.dimshuffle(0,1,'x') \
-                            + neg_norm * ( 1-mask_positive_t).dimshuffle(0,1,'x')
-        norm = norm * mask 
-                                        
-        return norm
-
-
-class Sphere(SceneObject):
-    def __init__(self, name, center, radius, material):
-        self.variables = VariableSet(name)
-        self.center = self.variables.add(center, 'center')
-        self.radius = self.variables.add(radius, 'radius', 0)
-        self.material = material
-        self.variables.add_child(material.variables)
-
-    def _hit(self, ray_field):
-        x = ray_field.origin - self.center
-        y = T.tensordot(ray_field.rays, x, 1)
-        determinent = T.sqr(y) - T.dot(x, x) + T.sqr(self.radius)
-        return determinent
-
-    def shadow(self, points, lights):
-        """
-        Returns whether points are in shadow of this object.
-
-        See: http://en.wikipedia.org/wiki/Line-sphere_intersection
-        """
-        y = points - self.center # vector from points to our center
-        x = T.tensordot(y, -1*lights[0].normed_dir(), 1)
-        decider = T.sqr(x) - T.sum(T.mul(y, y), 2) + T.sqr(self.radius)
-
-        # if shadow, below is >= 0
-        is_nan_or_nonpos = T.or_(T.isnan(decider), decider <= 0)
-        return T.switch(is_nan_or_nonpos, -1, -x - T.sqrt(decider))
-
-    def surface_pts(self, ray_field):
-        distance = self.distance(ray_field)
-        stabilized = T.switch(T.isinf(distance), 1000, distance)
-        return ray_field.origin + (stabilized.dimshuffle(0, 1, 'x') * ray_field.rays)
-
-    def distance(self, ray_field):
-        """
-        Returns the distances along the rays that hits occur.
-
-        If no hit, returns inf.
-        """
-        x = ray_field.origin - self.center
-        y = T.tensordot(ray_field.rays, x, 1)
-        determinent = self._hit(ray_field)
-        distance = -y - T.sqrt(determinent)
-        is_nan_or_negative = T.or_(determinent <= 0, T.isnan(determinent))
-        stabilized = T.switch(is_nan_or_negative, float('inf'), distance)
-        return stabilized
-
-    def normals(self, ray_field):
-        """Returns the sphere normals at each hit point."""
-        distance = self.distance(ray_field)
-        distance = T.switch(T.isinf(distance), 0, distance)
-        x = ray_field.origin - self.center
-        projections = x + (distance.dimshuffle(0, 1, 'x') * ray_field.rays)
-        normals = projections / T.sqrt(
-            T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
-        return normals
-
-
 def simple_scene():
     material1 = Material('material 1', (0.2, 0.9, 0.4),
                          0.8, 0.7, 0.5, 40.)
@@ -315,9 +229,9 @@ def simple_scene():
                          0.8, 0.9, 0.4, 60.)
 
     objs = [
-        Sphere('sphere 1', (10., 0., -1.), 2., material1),
-        Sphere('sphere 2', (6., 1., 1.), 1., material2),
-        Sphere('sphere 3', (5., -1., 1.), 1., material3)
+        Sphere('sphere 1', (10., 0., -1.), 1., material1),
+        #Sphere('sphere 2', (6., 1., 1.), 1., material2),
+        #Sphere('sphere 3', (5., -1., 1.), 1., material3)
         #UnitSquare('square 1', material2)
     ]
 
@@ -325,5 +239,4 @@ def simple_scene():
     camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 128, 128)
     shader = PhongShader('shader')
     return Scene(objs, [light], camera, shader)
-
 
