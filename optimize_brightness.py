@@ -9,8 +9,8 @@ if not os.path.exists('output'):
     os.makedirs('output')
 
 scene = simple_scene()
-scene.objects[0].trans,scene.objects[0].invtrans \
-            = scene.scale(scene.objects[0], (1.1,1.1,1.1), np.zeros((3,)))
+#scene.objects[0].trans,scene.objects[0].invtrans \
+#            = scene.scale(scene.objects[0], (1.1,1.1,1.1), np.zeros((3,)))
 
 opt = GDOptimizer(scene)
 
