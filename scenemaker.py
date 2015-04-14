@@ -103,16 +103,17 @@ class Scene:
 
     def translate(self, sceneobject, trans):
 
-        translate = np.eye((4)); 
-        translate[0][3] = trans[0];
-        translate[1][3] = trans[1];
-        translate[2][3] = trans[2];
-        sceneobject.trans = translate
-        translate[0][3] = -trans[0];
-        translate[1][3] = -trans[1];
-        translate[2][3] = -trans[2];
-        sceneobject.invtrans = translate
-   
+        translate = np.zeros((3,), dtype='float32'); 
+        translate[0] = trans[0];
+        translate[1] = trans[1];
+        translate[2] = trans[2];
+        M1 = translate
+        translate[0] = -trans[0];
+        translate[1] = -trans[1];
+        translate[2] = -trans[2];
+        M2 = translate
+        return M1, M2 
+
     def scale(self, sceneobject, sc, origin):
 
         scaleM = np.eye((3)); 
@@ -229,7 +230,7 @@ def simple_scene():
                          0.8, 0.9, 0.4, 60.)
 
     objs = [
-        Sphere('sphere 1', (10., 0., -1.), 1., material1),
+        Sphere('sphere 1', (0., 0., 0), 1., material1),
         #Sphere('sphere 2', (6., 1., 1.), 1., material2),
         #Sphere('sphere 3', (5., -1., 1.), 1., material3)
         #UnitSquare('square 1', material2)

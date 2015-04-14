@@ -38,7 +38,7 @@ class GDOptimizer:
         #                         allow_input_downcast=True))
 
         update_vars=[]
-        grads = T.grad(loss, self.vars)
+        grads = T.grad(loss, self.vars[2:])
         for var, gvar in zip(self.vars, grads):
             if self.locked(var): continue
             #if 'center' not in var: continue

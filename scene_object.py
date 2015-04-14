@@ -8,8 +8,10 @@ from util import *
 
 class SceneObject:
     def __init__(self, name):
-        self.trans = np.eye((3)); 
-        self.invtrans = np.eye((3)); 
+        self.transform = np.eye((3)); 
+        self.translate = np.zeros((3,)); 
+        self.invtransform = np.eye((3)); 
+        self.invtranslate = np.zeros((3,)); 
 
     def translate(point, factor):
 
@@ -48,8 +50,10 @@ class UnitSquare(SceneObject):
         self.variables = VariableSet(name)
         self.material = material
         self.variables.add_child(material.variables)
-        self.trans = np.eye((3)); 
-        self.invtrans = np.eye((3)); 
+        self.transform = np.eye((3)); 
+        self.invtransform = np.eye((3)); 
+        self.translate = np.zeros((3,)); 
+        self.invtranslate = np.zeros((3,)); 
 
 
     def _hit(self, rays, origin):
@@ -75,8 +79,8 @@ class UnitSquare(SceneObject):
         """Returns the distances along the rays that hits occur.
         If no hit, returns inf."""
 
-        rays = T.dot(self.invtrans, ray_field.rays)   
-        origin = T.dot(self.invtrans, ray_field.origin)   
+        rays = T.dot(self.invtransform, ray_field.rays) 
+        origin = T.dot(self.invtransform, ray_field.origin)  + self.invtranslate
         mask, intersection, ts = self._hit(ray, origin)
     
         return ts #intersection
@@ -95,7 +99,7 @@ class UnitSquare(SceneObject):
                             + neg_norm * ( 1-mask_positive_t).dimshuffle(0,1,'x')
         norm = norm * mask 
 
-        return transNorm(self.invtrans, norm)
+        return transNorm(self.invtransform, norm)
 
 
 class Sphere(SceneObject):
@@ -105,15 +109,20 @@ class Sphere(SceneObject):
         self.radius = self.variables.add(radius, 'radius', 0)
         self.material = material
         self.variables.add_child(material.variables)
-        self.trans = np.eye((3)); 
-        self.invtrans = np.eye((3)); 
+        self.transform = np.eye((3)); 
+        self.invtransform = np.eye((3)); 
+        self.translate = np.zeros((3,)); 
+        self.invtranslate = np.zeros((3,)); 
+
 
     def _hit(self, rays, origin):
-
-        x = origin -  T.dot(self.invtrans, self.center)
-        y = T.tensordot(rays, x, 1)
-        determinent = T.sqr(y) - T.dot(x, x) + T.sqr(self.radius)
-        return determinent
+   
+        emc = origin - self.center
+        pnorm = T.dot(emc,emc)
+        #vnorm = T.sum(rays * rays, axis=2)
+        pdotv = T.tensordot(rays, emc, 1)
+        determinent = T.sqr(pdotv) - (pnorm - 1)
+        return determinent 
 
     def shadow(self, points, lights):
         """
@@ -129,14 +138,16 @@ class Sphere(SceneObject):
         is_nan_or_nonpos = T.or_(T.isnan(decider), decider <= 0)
         return T.switch(is_nan_or_nonpos, -1, -x - T.sqrt(decider))
 
+
     def surface_pts(self, ray_field):
 
-        origin  = T.dot(self.invtrans, ray_field.origin)
-        rays    = T.dot(self.invtrans, ray_field.rays)
+        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
+        rays    = T.dot(ray_field.rays, self.invtransform.T) 
 
         distance = self.distance(ray_field)
         stabilized = T.switch(T.isinf(distance), 1000, distance)
         return origin + (stabilized.dimshuffle(0, 1, 'x') * rays)
+
 
     def distance(self, ray_field):
         """
@@ -144,14 +155,14 @@ class Sphere(SceneObject):
 
         If no hit, returns inf.
         """
-        origin  = T.dot(self.invtrans, ray_field.origin)
-        rays    = T.dot(ray_field.rays, self.invtrans.T)
 
-        import pdb; pdb.set_trace()
-        x = origin - T.dot(self.invtrans, self.center)
-        y = T.tensordot(rays, x, 1)
-        determinent = self._hit(rays, origin)
-        distance = -y - T.sqrt(determinent)
+        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
+        rays    = T.dot(ray_field.rays, self.invtransform.T) 
+
+        emc = origin - self.center
+        pdotv = T.tensordot(rays, emc, 1)
+        determinent = self._hit(rays, emc)
+        distance = (- pdotv + T.sqrt(determinent)) 
         is_nan_or_negative = T.or_(determinent <= 0, T.isnan(determinent))
         stabilized = T.switch(is_nan_or_negative, float('inf'), distance)
         return stabilized
@@ -159,16 +170,15 @@ class Sphere(SceneObject):
     def normals(self, ray_field):
         """Returns the sphere normals at each hit point."""
 
-        origin  = T.dot(self.invtrans, ray_field.origin)
-        rays    = T.dot(ray_field.rays, self.invtrans.T)
+        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
+        rays    = T.dot(ray_field.rays, self.invtransform.T) 
 
         distance = self.distance(ray_field)
         distance = T.switch(T.isinf(distance), 0, distance)
-        x = origin - T.dot(self.invtrans,self.center)
-        projections = x + (distance.dimshuffle(0, 1, 'x') * rays)
-        normals = projections / T.sqrt(
-            T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
-    
-        return transNorm(self.invtrans, normals)
+        projections = (origin -self.center) + (distance.dimshuffle(0, 1, 'x') * rays)
+        #normals = projections / T.sqrt(
+        #    T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
+        normals = projections
+        return transNorm(self.invtransform, normals)
 
 
