@@ -1,6 +1,8 @@
 import numpy as np
 import theano
 import theano.tensor as T
+from matplotlib import pyplot as plt
+
 
 def transNorm(transM, vec):
 
@@ -15,4 +17,13 @@ def transNorm(transM, vec):
 
     return transN
 
+def draw(fname, im):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.imshow(im, interpolation='nearest')
+    ax.add_patch(plt.Rectangle((85-3, 90-3), 6, 6, color='red',
+                               linewidth=2, fill=False))
+    ax.add_patch(plt.Rectangle((90-3, 50-3), 6, 6, color='red',
+                               linewidth=2, fill=False))
+    fig.savefig(fname, bbox_inches='tight', pad_inches=0)
 

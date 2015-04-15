@@ -5,6 +5,7 @@ import copy
 
 from scene_object import *
 from variable_set import *
+from util import *
 
 def broadcasted_switch(a, b, c):
     return T.switch(a.dimshuffle(0, 1, 'x'), b, c)
@@ -85,25 +86,39 @@ class Scene:
         values = [v[1] for v in varvals]
         return (variables, values)
 
-    def build(self):
+    def build(self, antialias_samples=4):
+
         # returns top-level render function and associated variables
-        image = T.alloc(0, self.camera.x_dims, self.camera.y_dims, 3)
-        min_dists = T.alloc(float('inf'), self.camera.x_dims, self.camera.y_dims)
+        image = T.alloc(0., self.camera.x_dims, self.camera.y_dims, 3)
 
-        # for each object find its shadings and draw closer objects on top
-        for obj in self.objects:
-            dists = obj.distance(self.camera.rays)
-            shadings = self.shader.shade(obj, self.lights, self.camera)
-            # for each object != obj, draw shadow of object on obj
-            #for obj2 in self.objects:
-            #    if obj == obj2: continue
-            #    shadings = broadcasted_switch(obj2.shadow(
-            #        obj.surface_pts(self.camera.rays), self.lights) < 0,
-            #                                  shadings, [0., 0., 0.])
+        #Anti-Aliasing
+        sampleDist_x = np.random.random((self.camera.x_dims, self.camera.y_dims,antialias_samples))
+        sampleDist_y = np.random.random((self.camera.x_dims, self.camera.y_dims,antialias_samples))
 
-            image = broadcasted_switch(dists < min_dists, shadings, image)
-            min_dists = T.switch(dists < min_dists, dists, min_dists)
+        for sample in xrange(antialias_samples): #TODO USE SCAN 
 
+            #Make Rays
+            self.camera.rays = self.camera.make_rays(self.camera.x_dims, self.camera.y_dims,\
+                            sampleDist_x=(sampleDist_x[:,:,sample] + sample)/antialias_samples,
+                            sampleDist_y=(sampleDist_y[:,:,sample] + sample)/antialias_samples)
+            #self.camera.variables.add_child(self.camera.rays.variables)
+            image_per_sample = T.alloc(0.0, self.camera.x_dims, self.camera.y_dims, 3)
+            min_dists = T.alloc(float('inf'), self.camera.x_dims, self.camera.y_dims)
+
+            # for each object find its shadings and draw closer objects on top
+            for obj in self.objects:
+                dists = obj.distance(self.camera.rays)
+                shadings = self.shader.shade(obj, self.lights, self.camera)
+                #for each object != obj, draw shadow of object on obj
+                #for obj2 in self.objects:
+                #    if obj == obj2: continue
+                #    shadings = broadcasted_switch(obj2.shadow(
+                #        obj.surface_pts(self.camera.rays), self.lights) < 0, shadings, [0., 0., 0.])
+                image_per_sample = broadcasted_switch(dists < min_dists, shadings, image_per_sample)
+                min_dists = T.switch(dists < min_dists, dists, min_dists)
+
+            image = image + image_per_sample
+        image = image / antialias_samples
         variables, values = self.gather_varvals()
 
         return variables, values, image
@@ -192,10 +207,8 @@ class Camera:
         self.look_at = look_at
         self.x_dims = x_dims
         self.y_dims = y_dims
-        self.rays = self.make_rays(x_dims, y_dims)
-        self.variables.add_child(self.rays.variables)
 
-    def make_rays(self, x_dims, y_dims):
+    def make_rays(self, x_dims, y_dims, sampleDist_x=None, sampleDist_y=None):
         # this should be rewritten in theano - currently we can't do any
         # sensible optimization on camera parameters since we're calculating
         # the ray field prior to entering theano (thus losing parameterisation)
@@ -203,7 +216,10 @@ class Camera:
                          np.linspace(-0.5, 0.5, x_dims), indexing='ij'))
         rays = np.dstack([np.ones([y_dims, x_dims]), rays])
         rays = np.divide(rays, np.linalg.norm(rays, axis=2).reshape(
-            y_dims, x_dims, 1).repeat(3, 2))
+                                        y_dims, x_dims, 1).repeat(3, 2))
+        
+        if sampleDist_x is not None: rays[:,:,1] = rays[:,:,1] + sampleDist_x / x_dims 
+        if sampleDist_y is not None: rays[:,:,2] = rays[:,:,2] + sampleDist_y / y_dims 
         return RayField('ray field', self.position, rays, x_dims, y_dims)
 
 
@@ -246,7 +262,7 @@ def simple_scene():
     objs = [
         Sphere('sphere 1', material1),
         Sphere('sphere 2', material2),
-        Sphere('sphere 2', material3)
+        #Sphere('sphere 3', material3),
         #Sphere('sphere 3', (5., -1., 1.), 1., material3)
         #UnitSquare('square 1', material2)
     ]
@@ -256,3 +272,4 @@ def simple_scene():
     shader = PhongShader('shader')
     #shader = DepthMapShader('shader')
     return Scene(objs, [light], camera, shader)
+
