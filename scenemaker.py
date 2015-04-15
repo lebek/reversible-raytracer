@@ -14,6 +14,18 @@ class Shader:
     pass
 
 
+class DepthMapShader(Shader):
+
+    def __init__(self, name):
+        self.variables = VariableSet(name)
+
+    def shade(self, scene_object, lights, camera):
+        distance = scene_object.distance(camera.rays)
+        minv = T.min(distance)
+        maxv = T.max(T.switch(T.isinf(distance), minv, distance))
+        scaled = (distance - minv) / (maxv - minv)
+        return (1 - scaled).dimshuffle(0, 1, 'x') * [1., 1., 1.]
+
 class PhongShader(Shader):
 
     def __init__(self, name):
@@ -103,7 +115,7 @@ class Scene:
 
     def translate(self, sceneobject, trans):
 
-        translate = np.zeros((3,), dtype='float32'); 
+        translate = np.zeros((3,), dtype='float32');
         translate[0] = trans[0];
         translate[1] = trans[1];
         translate[2] = trans[2];
@@ -112,24 +124,24 @@ class Scene:
         translate[1] = -trans[1];
         translate[2] = -trans[2];
         M2 = translate
-        return M1, M2 
+        return M1, M2
 
     def scale(self, sceneobject, sc, origin):
 
-        scaleM = np.eye((3)); 
-        scaleM[0,0] = sc[0]; #  scaleM[0,3] = origin[0] - sc[0] * origin[0] 
-        scaleM[1,1] = sc[1]; #  scaleM[1,3] = origin[1] - sc[1] * origin[1] 
+        scaleM = np.eye((3));
+        scaleM[0,0] = sc[0]; #  scaleM[0,3] = origin[0] - sc[0] * origin[0]
+        scaleM[1,1] = sc[1]; #  scaleM[1,3] = origin[1] - sc[1] * origin[1]
         scaleM[2,2] = sc[2]; #  scaleM[2,3] = origin[2] - sc[2] * origin[2]
         M1 = np.dot(sceneobject.trans, scaleM)
-        scaleM[0,0] = 1./sc[0];  # scaleM[0,3] = origin[0] - 1./sc[0] * origin[0] 
-        scaleM[1,1] = 1./sc[1];  # scaleM[1,3] = origin[1] - 1./sc[1] * origin[1] 
+        scaleM[0,0] = 1./sc[0];  # scaleM[0,3] = origin[0] - 1./sc[0] * origin[0]
+        scaleM[1,1] = 1./sc[1];  # scaleM[1,3] = origin[1] - 1./sc[1] * origin[1]
         scaleM[2,2] = 1./sc[2];  # scaleM[2,3] = origin[2] - 1./sc[2] * origin[2]
         M2 = np.dot(scaleM, sceneobject.trans)
         return M1,M2
 
     def rotate(self, sceneobject, axis, angle):
 
-        rotateM = np.eye((4));        
+        rotateM = np.eye((4));
         toRadian = 2*np.pi/360.0;
 
         for i in xrange(2):
@@ -141,18 +153,18 @@ class Scene:
                 rotateM[2,2] = np.cos(angle*toRadian);
                 rotateM[3,3] = 1;
             elif axis=='y':
-                rotateM[0,0] = np.cos(angle*toRadian); 
+                rotateM[0,0] = np.cos(angle*toRadian);
                 rotateM[1,1] = np.sin(angle*toRadian);
-                rotateM[1,2] = 1; 
+                rotateM[1,2] = 1;
                 rotateM[2,1] = -np.sin(angle*toRadian);
                 rotateM[2,2] = np.cos(angle*toRadian);
                 rotateM[3,3] = 1;
             elif axis=='z':
-                rotateM[0,0] = np.cos(angle*toRadian); 
+                rotateM[0,0] = np.cos(angle*toRadian);
                 rotateM[1,1] = -np.sin(angle*toRadian);
-                rotateM[1,2] = np.sin(angle*toRadian) 
+                rotateM[1,2] = np.sin(angle*toRadian)
                 rotateM[2,1] = np.cos(angle*toRadian);
-                rotateM[2,2] = 1 
+                rotateM[2,2] = 1
                 rotateM[3,3] = 1
             if i == 0:
                 sceneobject.trans = np.dot(sceneobject.trans, rotateM)
@@ -231,13 +243,13 @@ def simple_scene():
 
     objs = [
         Sphere('sphere 1', (0., 0., 0), 1., material1),
-        #Sphere('sphere 2', (6., 1., 1.), 1., material2),
-        #Sphere('sphere 3', (5., -1., 1.), 1., material3)
+        Sphere('sphere 2', (6., 1., 1.), 1., material2),
+        Sphere('sphere 3', (5., -1., 1.), 1., material3)
         #UnitSquare('square 1', material2)
     ]
 
     light = Light('light', (2., -1., -1.), (0.87, 0.961, 1.))
     camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 128, 128)
     shader = PhongShader('shader')
+    #shader = DepthMapShader('shader')
     return Scene(objs, [light], camera, shader)
-

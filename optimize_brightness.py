@@ -10,7 +10,14 @@ if not os.path.exists('output'):
 
 scene = simple_scene()
 scene.objects[0].translate, scene.objects[0].invtranslate \
-                = scene.translate(scene.objects[0], (5.,1,1))
+    = scene.translate(scene.objects[0], (5.,1,1))
+
+scene.objects[1].translate, scene.objects[1].invtranslate \
+    = scene.translate(scene.objects[0], (5.,-1,1))
+
+scene.objects[2].translate, scene.objects[2].invtranslate \
+    = scene.translate(scene.objects[2], (5.,1,-1))
+
 #            = scene.scale(scene.objects[0], (1.1,1.1,1.1), np.zeros((3,)))
 
 opt = GDOptimizer(scene)
