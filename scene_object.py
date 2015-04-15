@@ -8,10 +8,7 @@ from util import *
 
 class SceneObject:
     def __init__(self, name):
-        self.transform = np.eye((3)); 
-        self.translate = np.zeros((3,)); 
-        self.invtransform = np.eye((3)); 
-        self.invtranslate = np.zeros((3,)); 
+        pass
 
     def translate(point, factor):
 
@@ -50,11 +47,10 @@ class UnitSquare(SceneObject):
         self.variables = VariableSet(name)
         self.material = material
         self.variables.add_child(material.variables)
-        self.transform = np.eye((3)); 
-        self.invtransform = np.eye((3)); 
-        self.translate = np.zeros((3,)); 
-        self.invtranslate = np.zeros((3,)); 
-
+        #self.transform = self.variables.add(np.eye((3)), 'modelToWorldProj')
+        #self.translate = self.variables.add(np.zeros((3,)), 'modelToWorldTrans')
+        self.invtransform = self.variables.add(np.eye((3)), 'worldToModelProj')
+        self.invtranslate = self.variables.add(np.zeros((3,)), 'worldToModelTrans')
 
     def _hit(self, rays, origin):
 
@@ -103,25 +99,22 @@ class UnitSquare(SceneObject):
 
 
 class Sphere(SceneObject):
-    def __init__(self, name, center, radius, material):
+    def __init__(self, name, material):
         self.variables = VariableSet(name)
-        self.center = self.variables.add(center, 'center')
-        self.radius = self.variables.add(radius, 'radius', 0)
         self.material = material
         self.variables.add_child(material.variables)
-        self.transform = np.eye((3)); 
-        self.invtransform = np.eye((3)); 
-        self.translate = np.zeros((3,)); 
-        self.invtranslate = np.zeros((3,)); 
+        #self.transform = self.variables.add(np.eye((3)), 'modelToWorldProj')
+        #self.translate = self.variables.add(np.zeros((3,)), 'modelToWorldTrans')
+        self.invtransform = self.variables.add(np.eye((3), dtype='float32'), 'worldToModelProj')
+        self.invtranslate = self.variables.add(np.zeros((3,), dtype='float32'), 'worldToModelTrans')
 
 
     def _hit(self, rays, origin):
    
-        emc = origin - self.center
-        pnorm = T.dot(emc,emc)
-        #vnorm = T.sum(rays * rays, axis=2)
-        pdotv = T.tensordot(rays, emc, 1)
-        determinent = T.sqr(pdotv) - (pnorm - 1)
+        pnorm = T.dot(origin, origin)
+        vnorm = T.sum(rays * rays, axis=2)
+        pdotv = T.tensordot(rays, origin, 1)
+        determinent = T.sqr(pdotv) - vnorm * (pnorm - 1)
         return determinent 
 
     def shadow(self, points, lights):
@@ -130,9 +123,9 @@ class Sphere(SceneObject):
 
         See: http://en.wikipedia.org/wiki/Line-sphere_intersection
         """
-        y = points - self.center # vector from points to our center
+        y = points  # vector from points to our center
         x = T.tensordot(y, -1*lights[0].normed_dir(), 1)
-        decider = T.sqr(x) - T.sum(T.mul(y, y), 2) + T.sqr(self.radius)
+        decider = T.sqr(x) - T.sum(T.mul(y, y), 2) + 1 
 
         # if shadow, below is >= 0
         is_nan_or_nonpos = T.or_(T.isnan(decider), decider <= 0)
@@ -156,13 +149,13 @@ class Sphere(SceneObject):
         If no hit, returns inf.
         """
 
-        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
+        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate 
         rays    = T.dot(ray_field.rays, self.invtransform.T) 
 
-        emc = origin - self.center
-        pdotv = T.tensordot(rays, emc, 1)
-        determinent = self._hit(rays, emc)
-        distance = (- pdotv + T.sqrt(determinent)) 
+        pdotv = T.tensordot(rays, origin, 1)
+        vnorm = T.sum(rays * rays, axis=2)
+        determinent = self._hit(rays, origin)
+        distance = (- pdotv + T.sqrt(determinent)) / vnorm
         is_nan_or_negative = T.or_(determinent <= 0, T.isnan(determinent))
         stabilized = T.switch(is_nan_or_negative, float('inf'), distance)
         return stabilized
@@ -175,7 +168,7 @@ class Sphere(SceneObject):
 
         distance = self.distance(ray_field)
         distance = T.switch(T.isinf(distance), 0, distance)
-        projections = (origin -self.center) + (distance.dimshuffle(0, 1, 'x') * rays)
+        projections = (origin) + (distance.dimshuffle(0, 1, 'x') * rays)
         #normals = projections / T.sqrt(
         #    T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
         normals = projections

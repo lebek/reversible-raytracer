@@ -9,9 +9,11 @@ if not os.path.exists('output'):
     os.makedirs('output')
 
 scene = simple_scene()
-scene.objects[0].translate, scene.objects[0].invtranslate \
-                = scene.translate(scene.objects[0], (5.,1,1))
-#            = scene.scale(scene.objects[0], (1.1,1.1,1.1), np.zeros((3,)))
+scene.translate(scene.objects[0], (5.,2,2))
+scene.translate(scene.objects[1], (6.,-1,-1))
+scene.translate(scene.objects[2], (10,0,-1))
+scene.scale(scene.objects[2], (3,1,1), np.zeros((3,)))
+scene.rotate(scene.objects[2], 'z', 90)
 
 opt = GDOptimizer(scene)
 
