@@ -95,7 +95,7 @@ class Scene:
         sampleDist_x = np.random.random((self.camera.x_dims, self.camera.y_dims,antialias_samples))
         sampleDist_y = np.random.random((self.camera.x_dims, self.camera.y_dims,antialias_samples))
 
-        for sample in xrange(antialias_samples): #TODO USE SCAN 
+        for sample in xrange(antialias_samples): #TODO USE SCAN
 
             #Make Rays
             self.camera.rays = self.camera.make_rays(self.camera.x_dims, self.camera.y_dims,\
@@ -217,9 +217,9 @@ class Camera:
         rays = np.dstack([np.ones([y_dims, x_dims]), rays])
         rays = np.divide(rays, np.linalg.norm(rays, axis=2).reshape(
                                         y_dims, x_dims, 1).repeat(3, 2))
-        
-        if sampleDist_x is not None: rays[:,:,1] = rays[:,:,1] + sampleDist_x / x_dims 
-        if sampleDist_y is not None: rays[:,:,2] = rays[:,:,2] + sampleDist_y / y_dims 
+
+        if sampleDist_x is not None: rays[:,:,1] = rays[:,:,1] + sampleDist_x / x_dims
+        if sampleDist_y is not None: rays[:,:,2] = rays[:,:,2] + sampleDist_y / y_dims
         return RayField('ray field', self.position, rays, x_dims, y_dims)
 
 
@@ -272,4 +272,3 @@ def simple_scene():
     shader = PhongShader('shader')
     #shader = DepthMapShader('shader')
     return Scene(objs, [light], camera, shader)
-

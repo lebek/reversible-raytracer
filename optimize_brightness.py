@@ -20,17 +20,16 @@ opt = GDOptimizer(scene)
 
 print 'Rendering initial scene'
 variables, values, image = scene.build()
-render = theano.function([], image, on_unused_input='ignore')()
+render_fn = theano.function([], image, on_unused_input='ignore')
 
-draw('output/0.png', render)
+draw('output/0.png', render_fn())
 
-print 'Building gradient functions'
-train, render = opt.optimize(-image[90, 85].sum()-image[50, 90].sum(),
-                             0.02, 0.1, 90)
+print 'Optimization disabled until 0.7.0 bug is fixed'
+#print 'Building gradient functions'
+#train = opt.optimize(-image[90, 85].sum()-image[50, 90].sum(),
+#                             0.02, 0.1, 90)
 
-#theano.function([], image[90, 85].sum()+image[50, 90].sum()
-
-for i in range(90):
-    print 'Step', i+1
-    print train()
-    draw('output/%d.png' % (i+1,), render())
+#for i in range(90):
+#    print 'Step', i+1
+#    print train()
+#    draw('output/%d.png' % (i+1,), render_fn())
