@@ -4,7 +4,7 @@ Reversible Raytracer is a program that takes a description of a 3D scene and out
 ## Dependencies
 * numpy
 * scipy
-* theano
+* theano (bleeding-edge, or at least including [this commit](https://github.com/Theano/Theano/commit/ba5f2a3abd40377819d652ebf7d43b151c64ea87))
 
 ## Usage
 ```
