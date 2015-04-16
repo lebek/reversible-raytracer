@@ -152,7 +152,9 @@ class Sphere(SceneObject):
         pdotv = T.tensordot(rays, origin, 1)
         vnorm = T.sum(rays * rays, axis=2)
         determinent = self._hit(rays, origin)
-        distance = (- pdotv - T.sqrt(determinent)) / vnorm
+        distance1 = (- pdotv - T.sqrt(determinent)) / vnorm
+        distance2 = (- pdotv + T.sqrt(determinent)) / vnorm
+        distance = T.minimum(distance1, distance2)
         is_nan_or_negative = T.or_(determinent <= 0, T.isnan(determinent))
         stabilized = T.switch(is_nan_or_negative, float('inf'), distance)
         return stabilized

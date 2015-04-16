@@ -4,32 +4,23 @@ from matplotlib import pyplot as plt
 from scenemaker import simple_scene
 from grad_descent import GDOptimizer
 import theano
+from util import *
 
 if not os.path.exists('output'):
     os.makedirs('output')
 
 scene = simple_scene()
-scene.translate(scene.objects[0], (5.,2,2))
+#scene.translate(scene.objects[2], (0.,2,7))
 scene.translate(scene.objects[1], (6.,-1,-1))
-scene.translate(scene.objects[2], (10,0,-1))
-scene.scale(scene.objects[2], (3,1,1), np.zeros((3,)))
-scene.rotate(scene.objects[2], 'z', 90)
+scene.translate(scene.objects[0], (10,0,-1))
+scene.scale(scene.objects[0], (1,2,1.5), np.zeros((3,)))
+#scene.rotate(scene.objects[2], 'x', 90)
 
 opt = GDOptimizer(scene)
 
 print 'Rendering initial scene'
 variables, values, image = scene.build()
 render = theano.function([], image, on_unused_input='ignore')()
-
-def draw(fname, im):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.imshow(im, interpolation='nearest')
-    ax.add_patch(plt.Rectangle((85-3, 90-3), 6, 6, color='red',
-                               linewidth=2, fill=False))
-    ax.add_patch(plt.Rectangle((90-3, 50-3), 6, 6, color='red',
-                               linewidth=2, fill=False))
-    fig.savefig(fname, bbox_inches='tight', pad_inches=0)
 
 draw('output/0.png', render)
 
