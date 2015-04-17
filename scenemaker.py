@@ -253,11 +253,11 @@ class Material:
 
 def simple_scene():
     material1 = Material('material 1', (0.2, 0.9, 0.4),
-                         0.8, 0.7, 0.5, 40.)
+                         0.3, 0.7, 0.5, 50.)
     material2 = Material('material 2', (0.87, 0.1, 0.507),
-                         0.8, 0.9, 0.4, 60.)
+                         0.3, 0.9, 0.4, 50.)
     material3 = Material('material 3', (0.2, 0.3, 1.),
-                         0.8, 0.9, 0.4, 60.)
+                         0.3, 0.9, 0.4, 50.)
 
     objs = [
         Sphere('sphere 1', material1),

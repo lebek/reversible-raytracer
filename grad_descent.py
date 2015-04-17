@@ -18,7 +18,7 @@ class GDOptimizer:
                 "intensity" in var.name or
                 "camera" in var.name)
 
-    def optimize(self, loss, lr, momentum=0, maxIterations=30):
+    def optimize(self, loss, lr, momentum=0):
         """
         Maximize the loss function with learning rate lr.
         """
@@ -26,8 +26,8 @@ class GDOptimizer:
         update_vars = []
         grads = T.grad(loss, self.vars)
         for var, gvar in zip(self.vars, grads):
-            if self.locked(var): continue
-            #if 'center' not in var: continue
+            if self.locked(var):
+                continue
             update_vars.append((var, var - lr * gvar))
 
         return theano.function([], loss, updates=update_vars)
