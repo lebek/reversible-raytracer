@@ -49,25 +49,27 @@ class UnitSquare(SceneObject):
         self.variables.add_child(material.variables)
         #self.transform = self.variables.add(np.eye((3)), 'modelToWorldProj')
         #self.translate = self.variables.add(np.zeros((3,)), 'modelToWorldTrans')
-        self.invtransform = self.variables.add(np.eye((3)), 'worldToModelProj')
-        self.invtranslate = self.variables.add(np.zeros((3,)), 'worldToModelTrans')
+        self.invtransform = self.variables.add(np.eye((3), dtype='float32'), 'worldToModelProj')
+        self.invtranslate = self.variables.add(np.zeros((3,), dtype='float32'), 'worldToModelTrans')
 
     def _hit(self, rays, origin):
 
 
         mask_not_parallel_xy_plane = T.neq(rays[:,:,2],0)
-        ts = -ray_field.origin[2] / rays[:,:,2] #t is the
+        ts = -origin[2] / rays[:,:,2] #t is the
         mask_positive_t = T.gt(ts, 0)
-        intersection = ray_field.origin + ts.dimshuffle(0, 1, 'x')* rays
-        mask_interior_of_unitsquare = T.gt(intersection, -0.5) * T.lt(intersection,0.5)
-        mask = mask_interior_of_unitsquare * mask_positive_t.dimshuffle(0,1,'x')\
-                        * mask_not_parallel_xy_plane.dimshuffle(0,1,'x')
+        intersection = origin + ts.dimshuffle(0, 1, 'x')* rays
+        mask_interior_of_unitsquare_x = T.gt(intersection[:,:,0], -0.5) * T.lt(intersection[:,:,0],0.5)
+        mask_interior_of_unitsquare_y = T.gt(intersection[:,:,1], -0.5) * T.lt(intersection[:,:,1],0.5)
+        mask_interior_of_unitsquare = mask_interior_of_unitsquare_x * mask_interior_of_unitsquare_y
+        mask = mask_interior_of_unitsquare * mask_positive_t\
+                        * mask_not_parallel_xy_plane
 
         all_falses = (1-mask)
-        intersection = T.switch(all_falses, float('inf'), intersection)
-        intersection = T.set_subtensor(intersection[:,:,2], T.zeros_like(rays[:,:,2]))
-        intersection = T.dot(self.trans, intersection)
-        return mask, intersection,ts
+
+        ts = ts * mask
+        ts = T.switch(1-mask, float('inf'), ts)
+        return mask, ts
 
 
     def distance(self, ray_field):
@@ -75,26 +77,26 @@ class UnitSquare(SceneObject):
         """Returns the distances along the rays that hits occur.
         If no hit, returns inf."""
 
-        rays = T.dot(self.invtransform, ray_field.rays)
-        origin = T.dot(self.invtransform, ray_field.origin)  + self.invtranslate
-        mask, intersection, ts = self._hit(ray, origin)
-
+        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
+        rays    = T.dot(ray_field.rays, self.invtransform.T)
+        mask, ts = self._hit(rays, origin)
         return ts #intersection
 
     def normals(self, ray_field):
+        
+        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
+        rays    = T.dot(ray_field.rays, self.invtransform.T)
+        mask, ts = self._hit(rays, origin)
+        mask_positive_t = T.gt(origin[2], 0)
 
-        mask, intersection,ts = self._hit(ray_field)
-        mask_positive_t = T.gt(ts, 0)
-
-        pos_norm = np.tile( np.asarray([0.0,0.0,1.0]), \
+        pos_norm = np.tile( np.asarray([0.0,0.0,1.0], dtype='float32'), \
                  [ray_field.x_dims,ray_field.y_dims,1])
-        neg_norm = np.tile( np.asarray([0.0,0.0,-1.0]), \
+        neg_norm = np.tile( np.asarray([0.0,0.0,-1.0], dtype='float32'), \
                  [ray_field.x_dims,ray_field.y_dims,1])
 
-        norm = pos_norm * mask_positive_t.dimshuffle(0,1,'x') \
-                            + neg_norm * ( 1-mask_positive_t).dimshuffle(0,1,'x')
-        norm = norm * mask
-
+        norm = pos_norm * mask_positive_t\
+                            + neg_norm * ( 1-mask_positive_t)
+        norm = norm * mask.dimshuffle(0,1,'x')
         return transNorm(self.invtransform, norm)
 
 

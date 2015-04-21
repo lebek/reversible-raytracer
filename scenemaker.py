@@ -138,7 +138,10 @@ class Scene:
         translate[0] = -trans[0];
         translate[1] = -trans[1];
         translate[2] = -trans[2];
-        sceneobject.invtranslate.set_value(translate)
+        #sceneobject.invtransform.set_value(translate + sceneobject.invtransform.get_value())
+        sceneobject.invtranslate.set_value(translate + \
+                        sceneobject.invtranslate.get_value())
+
 
     def scale(self, sceneobject, sc, origin):
 
@@ -163,21 +166,21 @@ class Scene:
         for i in xrange(2):
             if axis=='x':
                 rotateM[0,0] = 1;
-                rotateM[1,1] = np.cos(angle*toRadian);
+                rotateM[1,1] = np.cos (angle*toRadian);
                 rotateM[1,2] = -np.sin(angle*toRadian);
-                rotateM[2,1] = np.sin(angle*toRadian);
-                rotateM[2,2] = np.cos(angle*toRadian);
+                rotateM[2,1] = np.sin (angle*toRadian);
+                rotateM[2,2] = np.cos (angle*toRadian);
             elif axis=='y':
                 rotateM[0,0] = np.cos(angle*toRadian);
-                rotateM[1,1] = np.sin(angle*toRadian);
-                rotateM[1,2] = 1;
-                rotateM[2,1] = -np.sin(angle*toRadian);
+                rotateM[0,2] = np.sin(angle*toRadian);
+                rotateM[1,1] = 1;
+                rotateM[2,0] = -np.sin(angle*toRadian);
                 rotateM[2,2] = np.cos(angle*toRadian);
             elif axis=='z':
-                rotateM[0,0] = np.cos(angle*toRadian);
-                rotateM[1,1] = -np.sin(angle*toRadian);
-                rotateM[1,2] = np.sin(angle*toRadian)
-                rotateM[2,1] = np.cos(angle*toRadian);
+                rotateM[0,0] =  np.cos(angle*toRadian);
+                rotateM[0,1] = -np.sin(angle*toRadian);
+                rotateM[1,0] =  np.sin(angle*toRadian)
+                rotateM[1,1] =  np.cos(angle*toRadian);
                 rotateM[2,2] = 1
 
             if i == 0:
@@ -186,7 +189,7 @@ class Scene:
             else:
                 sceneobject.invtransform.set_value(np.dot(rotateM, sceneobject.invtransform.get_value()))
                 sceneobject.invtranslate.set_value(np.dot(rotateM, \
-                                sceneobject.invtranslate.get_value())+ rotateT)
+                                sceneobject.invtranslate.get_value()))
 
 
 
@@ -201,10 +204,10 @@ class RayField:
         self.y_dims = y_dims
 
 class Camera:
-    def __init__(self, name, position, look_at, x_dims, y_dims):
+    def __init__(self, name, position, x_dims, y_dims):
         self.variables = VariableSet(name)
         self.position = self.variables.add(position, 'position')
-        self.look_at = look_at
+        self.look_at = np.asarray([0,0,1.], dtype='float32')
         self.x_dims = x_dims
         self.y_dims = y_dims
 
@@ -212,14 +215,15 @@ class Camera:
         # this should be rewritten in theano - currently we can't do any
         # sensible optimization on camera parameters since we're calculating
         # the ray field prior to entering theano (thus losing parameterisation)
+        
         rays = np.dstack(np.meshgrid(np.linspace(0.5, -0.5, y_dims),
                          np.linspace(-0.5, 0.5, x_dims), indexing='ij'))
-        rays = np.dstack([np.ones([y_dims, x_dims]), rays])
+        rays = np.dstack([rays, np.ones([y_dims, x_dims])])
         rays = np.divide(rays, np.linalg.norm(rays, axis=2).reshape(
                                         y_dims, x_dims, 1).repeat(3, 2))
 
-        if sampleDist_x is not None: rays[:,:,1] = rays[:,:,1] + sampleDist_x / x_dims
-        if sampleDist_y is not None: rays[:,:,2] = rays[:,:,2] + sampleDist_y / y_dims
+        if sampleDist_x is not None: rays[:,:,0] = rays[:,:,0] + sampleDist_x / x_dims
+        if sampleDist_y is not None: rays[:,:,1] = rays[:,:,1] + sampleDist_y / y_dims
         return RayField('ray field', self.position, rays, x_dims, y_dims)
 
 
@@ -264,11 +268,14 @@ def simple_scene():
         Sphere('sphere 2', material2),
         #Sphere('sphere 3', material3),
         #Sphere('sphere 3', (5., -1., 1.), 1., material3)
-        #UnitSquare('square 1', material2)
+        UnitSquare('square 1', material3)
     ]
 
-    light = Light('light', (2., -1., -1.), (0.87, 0.961, 1.))
-    camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 128, 128)
+    light = Light('light', (-1., -1., 2.), (1., 0.87, 0.961))
+    #camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 128, 128)
+    camera = Camera('camera', (0., 0., 0.), 128, 128)
     shader = PhongShader('shader')
     #shader = DepthMapShader('shader')
     return Scene(objs, [light], camera, shader)
+
+
