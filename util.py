@@ -1,6 +1,8 @@
 import numpy as np
 import theano
 import theano.tensor as T
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
@@ -18,6 +20,7 @@ def transNorm(transM, vec):
     return transN
 
 def draw(fname, im):
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.imshow(im, interpolation='nearest')
