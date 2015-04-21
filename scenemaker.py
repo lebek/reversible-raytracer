@@ -17,13 +17,14 @@ class Shader:
 
 class DepthMapShader(Shader):
 
-    def __init__(self, name):
+    def __init__(self, name, maxDepth):
         self.variables = VariableSet(name)
+        self.maxDepth = maxDepth
 
     def shade(self, scene_object, lights, camera):
         distance = scene_object.distance(camera.rays)
-        minv = T.min(distance)
-        maxv = T.max(T.switch(T.isinf(distance), minv, distance))
+        minv = 0
+        maxv = self.maxDepth
         scaled = (distance - minv) / (maxv - minv)
         return (1 - scaled).dimshuffle(0, 1, 'x') * [1., 1., 1.]
 
