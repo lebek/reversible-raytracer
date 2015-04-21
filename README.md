@@ -9,6 +9,8 @@ Reversible Raytracer is a program that takes a description of a 3D scene and out
 ## Usage
 ```
 $ THEANO_FLAGS='mode=FAST_RUN,floatX=float32' python optimize_brightness.py
+or
+$ THEANO_FLAGS='mode=FAST_RUN,floatX=float32' python match_mirror.py
 ```
 
 The result is in `output/`
