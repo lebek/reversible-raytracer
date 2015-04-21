@@ -19,12 +19,7 @@ def transNorm(transM, vec):
 
     return transN
 
-<<<<<<< HEAD
-def draw(fname, im):
-
-=======
 def drawWithMarkers(fname, im):
->>>>>>> 3b6a34095f5f207dd306d7217c04b558e384cd52
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.imshow(im, interpolation='nearest')
