@@ -13,11 +13,11 @@ def transNorm(transM, vec):
     transN = T.set_subtensor(transN[:,:,1], vec[:,:,0] * transM[0][1] \
                                 + vec[:,:,1] * transM[1][1] + vec[:,:,2] * transM[2][1])
     transN = T.set_subtensor(transN[:,:,2], vec[:,:,0] * transM[0][2] \
-                                + vec[:,:,1] * transM[1][2] + vec[:,:,2] * transM[2][2])	
+                                + vec[:,:,1] * transM[1][2] + vec[:,:,2] * transM[2][2])
 
     return transN
 
-def draw(fname, im):
+def drawWithMarkers(fname, im):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.imshow(im, interpolation='nearest')
@@ -27,3 +27,8 @@ def draw(fname, im):
                                linewidth=2, fill=False))
     fig.savefig(fname, bbox_inches='tight', pad_inches=0)
 
+def draw(fname, im):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.imshow(im, interpolation='nearest')
+    fig.savefig(fname, bbox_inches='tight', pad_inches=0)
