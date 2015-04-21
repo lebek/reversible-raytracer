@@ -4,6 +4,7 @@ import theano.tensor as T
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+from scipy.misc import imsave
 
 
 def transNorm(transM, vec):
@@ -30,7 +31,4 @@ def drawWithMarkers(fname, im):
     fig.savefig(fname, bbox_inches='tight', pad_inches=0)
 
 def draw(fname, im):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.imshow(im, interpolation='nearest')
-    fig.savefig(fname, bbox_inches='tight', pad_inches=0)
+    imsave(fname, im)
