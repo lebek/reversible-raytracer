@@ -5,10 +5,12 @@ from scenemaker import *
 import theano
 from util import *
 
-n = 10000
+n = 10
+x_dims = 128
+y_dims = 128
 
-# Generates n 128x128 image samples containing 2 spheres with randomly
-# assigned centers. Saves the result in dataset.npz
+# Generates n x_dims-by-y_dims image samples containing 2 spheres with
+# randomly assigned centers. Saves the result in dataset.npz
 
 if not os.path.exists('dataset'):
     os.makedirs('dataset')
@@ -24,23 +26,24 @@ objs = [
 ]
 
 light = Light('light', (-1., -1., 2.), (0.961, 1., 0.87))
-camera = Camera('camera', (0., 0., 0.),  128, 128)
-shader = DepthMapShader('shader', 6)
+camera = Camera('camera', (0., 0., 0.), x_dims, y_dims)
+shader = DepthMapShader('shader', 8)
 scene = Scene(objs, [light], camera, shader)
 
 variables, values, image = scene.build()
 render_fn = theano.function([], image, on_unused_input='ignore')
 
 def random_transform(obj):
-    #scene.translate(obj, (rand()*4-2, rand()*4-2, rand()*4-2))
+    scene.translate(obj, (0, 0, 6))
     scene.translate(obj, (rand()*2-1, rand()*2-1, rand()*2-1))
     #scene.scale(obj, (rand()+1, rand()+1, rand()+1), np.zeros((3,)))
 
-dataset = np.zeros((n, 128, 128), dtype=np.uint8)
+dataset = np.zeros((n, x_dims, y_dims), dtype=np.uint8)
 for i in range(n):
     random_transform(scene.objects[0])
     random_transform(scene.objects[1])
-    dataset[i] = (render_fn()[:, :, 0] * 255).astype(np.uint8)
-    #draw('dataset/%d.png' % (i,), dataset[i])
+    render = render_fn()[:, :, 0]
+    dataset[i] = (render * 255).astype(np.uint8)
+    draw('dataset/%d.png' % (i,), render)
 
 np.savez('dataset', dataset)
