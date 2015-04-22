@@ -22,8 +22,6 @@ class GDOptimizer:
         """
         Maximize the loss function with learning rate lr.
         """
-
-        update_vars = []
         grads = T.grad(loss, self.vars)
         for var, gvar in zip(self.vars, grads):
             if self.locked(var):
@@ -31,3 +29,5 @@ class GDOptimizer:
             update_vars.append((var, var - lr * gvar))
 
         return theano.function([], loss, updates=update_vars)
+
+
