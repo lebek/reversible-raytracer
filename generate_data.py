@@ -5,6 +5,11 @@ from scenemaker import *
 import theano
 from util import *
 
+n = 10000
+
+# Generates n 128x128 image samples containing 2 spheres with randomly
+# assigned centers. Saves the result in dataset.npz
+
 if not os.path.exists('dataset'):
     os.makedirs('dataset')
 
@@ -30,7 +35,11 @@ def random_transform(obj):
     scene.translate(obj, (rand()*2+4, rand()*4-2, rand()*4-2))
     #scene.scale(obj, (rand()+1, rand()+1, rand()+1), np.zeros((3,)))
 
-for i in range(100):
+dataset = np.zeros((n, 128, 128), dtype=np.uint8)
+for i in range(n):
     random_transform(scene.objects[0])
     random_transform(scene.objects[1])
-    draw('dataset/%d.png' % (i,), render_fn())
+    dataset[i] = (render_fn()[:, :, 0] * 255).astype(np.uint8)
+    #draw('dataset/%d.png' % (i,), dataset[i])
+
+np.savez('dataset', dataset)
