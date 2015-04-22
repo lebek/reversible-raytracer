@@ -173,3 +173,6 @@ class Sphere(SceneObject):
         normals = projections / T.sqrt(
             T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
         return transNorm(self.invtransform, normals)
+
+
+

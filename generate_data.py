@@ -23,8 +23,8 @@ objs = [
     Sphere('sphere 2', material2)
 ]
 
-light = Light('light', (2., -1., -1.), (0.87, 0.961, 1.))
-camera = Camera('camera', (0., 0., 0.), (1., 0., 0.), 128, 128)
+light = Light('light', (-1., -1., 2.), (0.961, 1., 0.87))
+camera = Camera('camera', (0., 0., 0.),  128, 128)
 shader = DepthMapShader('shader', 6)
 scene = Scene(objs, [light], camera, shader)
 
@@ -32,7 +32,8 @@ variables, values, image = scene.build()
 render_fn = theano.function([], image, on_unused_input='ignore')
 
 def random_transform(obj):
-    scene.translate(obj, (rand()*2+4, rand()*4-2, rand()*4-2))
+    #scene.translate(obj, (rand()*4-2, rand()*4-2, rand()*4-2))
+    scene.translate(obj, (rand()*2-1, rand()*2-1, rand()*2-1))
     #scene.scale(obj, (rand()+1, rand()+1, rand()+1), np.zeros((3,)))
 
 dataset = np.zeros((n, 128, 128), dtype=np.uint8)
