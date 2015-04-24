@@ -10,35 +10,6 @@ class SceneObject:
     def __init__(self, name):
         pass
 
-    def translate(point, factor):
-
-        point[0] = point[0] + factor[0];
-        point[0] = point[1] + factor[1];
-        point[0] = point[2] + factor[2];
-        return point
-
-    def scale(point, factor):
-
-        point[0] = point[0] * factor[0];
-        point[0] = point[1] * factor[1];
-        point[0] = point[2] * factor[2];
-        return point
-
-    def rotate(point, angle, axis='x'):
-
-        toRadian = 2 * np.pi/360.0;
-        if axis=='x':
-            point[1] = np.cos(angle * toRadian) * point[1] - np.sin(angle *toRadian)*point[2];
-            point[2] = np.sin(angle * toRadian) * point[1] + np.cos(angle *toRadian)*point[2];
-        elif axis=='y':
-           point[0] = np.cos(angle * toRadian) * point[0] - np.sin(angle *toRadian)*point[2];
-           point[2] = np.sin(angle * toRadian) * point[0] + np.cos(angle *toRadian)*point[2];
-        elif axis=='z':
-            point[1] = np.cos(angle * toRadian) * point[1] - np.sin(angle *toRadian)*point[2];
-            point[2] = np.sin(angle * toRadian) * point[1] + np.cos(angle *toRadian)*point[2];
-        return point
-
-
 class UnitSquare(SceneObject):
     def __init__(self, name, material):
         '''UnitSquare defined on the xy-plane, with vertices (0.5, 0.5, 0),
@@ -83,7 +54,7 @@ class UnitSquare(SceneObject):
         return ts #intersection
 
     def normals(self, ray_field):
-        
+
         origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
         rays    = T.dot(ray_field.rays, self.invtransform.T)
         mask, ts = self._hit(rays, origin)
@@ -101,14 +72,10 @@ class UnitSquare(SceneObject):
 
 
 class Sphere(SceneObject):
-    def __init__(self, name, material):
-        self.variables = VariableSet(name)
+    def __init__(self, o2w, material):
+        self.o2w = o2w
+        self.w2o = self.o2w.inverse()
         self.material = material
-        self.variables.add_child(material.variables)
-        #self.transform = self.variables.add(np.eye((3)), 'modelToWorldProj')
-        #self.translate = self.variables.add(np.zeros((3,)), 'modelToWorldTrans')
-        self.invtransform = self.variables.add(np.eye((3), dtype='float32'), 'worldToModelProj')
-        self.invtranslate = self.variables.add(np.zeros((3,), dtype='float32'), 'worldToModelTrans')
 
     def _hit(self, rays, origin):
         pnorm = T.dot(origin, origin)
@@ -132,28 +99,27 @@ class Sphere(SceneObject):
         return T.switch(is_nan_or_nonpos, -1, -x - T.sqrt(decider))
 
 
-    def surface_pts(self, ray_field):
+    def surface_pts(self, rayField):
 
-        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
-        rays    = T.dot(ray_field.rays, self.invtransform.T)
+        rf = self.w2o(rayField)
 
-        distance = self.distance(ray_field)
+        distance = self.distance(rayField)
         stabilized = T.switch(T.isinf(distance), 1000, distance)
-        return origin + (stabilized.dimshuffle(0, 1, 'x') * rays)
+        return rf.origin + (stabilized.dimshuffle(0, 1, 'x') * rays)
 
 
-    def distance(self, ray_field):
+    def distance(self, rayField):
         """
         Returns the distances along the rays that hits occur.
 
         If no hit, returns inf.
         """
-        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
-        rays    = T.dot(ray_field.rays, self.invtransform.T)
 
-        pdotv = T.tensordot(rays, origin, 1)
-        vnorm = T.sum(rays * rays, axis=2)
-        determinent = self._hit(rays, origin)
+        rf = self.w2o(rayField)
+
+        pdotv = T.tensordot(rf.rays, rf.origin, 1)
+        vnorm = T.sum(rf.rays * rf.rays, axis=2)
+        determinent = self._hit(rf.rays, rf.origin)
         distance1 = (- pdotv - T.sqrt(determinent)) / vnorm
         distance2 = (- pdotv + T.sqrt(determinent)) / vnorm
         distance = T.minimum(distance1, distance2)
@@ -161,18 +127,14 @@ class Sphere(SceneObject):
         stabilized = T.switch(is_nan_or_negative, float('inf'), distance)
         return stabilized
 
-    def normals(self, ray_field):
+    def normals(self, rayField):
         """Returns the sphere normals at each hit point."""
 
-        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
-        rays    = T.dot(ray_field.rays, self.invtransform.T)
+        rf = self.w2o(rayField)
 
-        distance = self.distance(ray_field)
+        distance = self.distance(rayField)
         distance = T.switch(T.isinf(distance), 0, distance)
-        projections = (origin) + (distance.dimshuffle(0, 1, 'x') * rays)
+        projections = (rf.origin) + (distance.dimshuffle(0, 1, 'x') * rf.rays)
         normals = projections / T.sqrt(
             T.sum(projections ** 2, 2)).dimshuffle(0, 1, 'x')
-        return transNorm(self.invtransform, normals)
-
-
-
+        return normals # need to fix

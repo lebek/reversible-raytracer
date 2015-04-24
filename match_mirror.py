@@ -1,32 +1,49 @@
 import os
 import numpy as np
-from scenemaker import simple_scene
 from grad_descent import GDOptimizer
 import theano
 from util import *
+from transform import *
+from scenemaker import *
 
 if not os.path.exists('output'):
     os.makedirs('output')
 
-scene = simple_scene()
-#scene.translate(scene.objects[2], (0.,2,7))
-scene.translate(scene.objects[1], (6.,1,1))
-scene.translate(scene.objects[0], (10,-1,1))
-scene.scale(scene.objects[0], (1,2,1.5), np.zeros((3,)))
-#scene.rotate(scene.objects[2], 'x', 90)
+
+tv = lambda x: T.as_tensor_variable(np.array(x))
+
+center1 = theano.shared(np.asarray([-.5, -.5, 3], dtype=theano.config.floatX),
+                       borrow=True)
+center2 = theano.shared(np.asarray([.5, .5, 3], dtype=theano.config.floatX),
+                       borrow=True)
+
+material1 = Material((0.2, 0.9, 0.4), 0.3, 0.7, 0.5, 50.)
+material2 = Material((0.87, 0.1, 0.507), 0.3, 0.9, 0.4, 50.)
+
+objs = [
+    Sphere(translate(center1), material1),
+    Sphere(translate(center2), material2)
+]
+
+light = Light((-1., -1., 2.), (1., 0.87, 0.961))
+camera = Camera(128, 128)
+shader = PhongShader()
+scene = Scene(objs, [light], camera, shader)
 
 print 'Rendering initial scene'
-variables, values, image = scene.build()
+image = scene.build()
 render_fn = theano.function([], image, on_unused_input='ignore')
 
 render = render_fn()
 flipped = np.fliplr(render)
 draw('output/0.png', render)
+draw('output/0lr.png', flipped)
+
 
 cost = ((image - flipped) ** 2).sum()
 
 print 'Building gradient functions'
-train = GDOptimizer(scene).optimize(cost, 0.000008, 0.1)
+train = GDOptimizer().optimize([center1, center2], cost, 0.000008, 0.1)
 
 for i in range(90):
     print 'Step', i+1
