@@ -11,21 +11,15 @@ class SceneObject:
         pass
 
 class UnitSquare(SceneObject):
-    def __init__(self, name, material):
+    def __init__(self, o2w, material):
         '''UnitSquare defined on the xy-plane, with vertices (0.5, 0.5, 0),
         (-0.5, 0.5, 0), (-0.5, -0.5, 0), (0.5, -0.5, 0), and normal (0, 0, 1).'''
 
-        self.variables = VariableSet(name)
+        self.o2w = o2w
+        self.w2o = o2w.inverse()
         self.material = material
-        self.variables.add_child(material.variables)
-        #self.transform = self.variables.add(np.eye((3)), 'modelToWorldProj')
-        #self.translate = self.variables.add(np.zeros((3,)), 'modelToWorldTrans')
-        self.invtransform = self.variables.add(np.eye((3), dtype='float32'), 'worldToModelProj')
-        self.invtranslate = self.variables.add(np.zeros((3,), dtype='float32'), 'worldToModelTrans')
 
     def _hit(self, rays, origin):
-
-
         mask_not_parallel_xy_plane = T.neq(rays[:,:,2],0)
         ts = -origin[2] / rays[:,:,2] #t is the
         mask_positive_t = T.gt(ts, 0)
@@ -43,38 +37,39 @@ class UnitSquare(SceneObject):
         return mask, ts
 
 
-    def distance(self, ray_field):
+    def distance(self, rayField):
 
         """Returns the distances along the rays that hits occur.
         If no hit, returns inf."""
 
-        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
-        rays    = T.dot(ray_field.rays, self.invtransform.T)
-        mask, ts = self._hit(rays, origin)
+        rf = self.w2o(rayField)
+        mask, ts = self._hit(rf.rays, rf.origin)
         return ts #intersection
 
-    def normals(self, ray_field):
+    def normals(self, rayField):
+        rf = self.w2o(rayField)
+        mask, ts = self._hit(rf.rays, rf.origin)
+        mask_positive_t = T.gt(rf.origin[2], 0)
 
-        origin  = T.dot(self.invtransform, ray_field.origin) + self.invtranslate
-        rays    = T.dot(ray_field.rays, self.invtransform.T)
-        mask, ts = self._hit(rays, origin)
-        mask_positive_t = T.gt(origin[2], 0)
-
-        pos_norm = np.tile( np.asarray([0.0,0.0,1.0], dtype='float32'), \
-                 [ray_field.x_dims,ray_field.y_dims,1])
-        neg_norm = np.tile( np.asarray([0.0,0.0,-1.0], dtype='float32'), \
-                 [ray_field.x_dims,ray_field.y_dims,1])
+        pos_norm = T.concatenate([
+            T.zeros_like(rf.rays[:,:,:2]),
+            T.ones_like(rf.rays[:,:,:1])
+        ], axis=2)
+        neg_norm = T.concatenate([
+            T.zeros_like(rf.rays[:,:,:2]),
+            T.ones_like(rf.rays[:,:,:1])*-1
+        ], axis=2)
 
         norm = pos_norm * mask_positive_t\
                             + neg_norm * ( 1-mask_positive_t)
         norm = norm * mask.dimshuffle(0,1,'x')
-        return transNorm(self.invtransform, norm)
+        return norm
 
 
 class Sphere(SceneObject):
     def __init__(self, o2w, material):
         self.o2w = o2w
-        self.w2o = self.o2w.inverse()
+        self.w2o = o2w.inverse()
         self.material = material
 
     def _hit(self, rays, origin):

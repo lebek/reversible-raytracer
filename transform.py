@@ -57,6 +57,8 @@ class Transform():
 def translate(x):
     """Returns a transform matrix to represent a translation"""
 
+    x = T.as_tensor_variable(x)
+
     m = T.eye(4, 4)
     m = T.set_subtensor(m[0,3], x[0])
     m = T.set_subtensor(m[1,3], x[1])
@@ -72,6 +74,8 @@ def translate(x):
 
 def scale(x):
     """Creates a transform matrix to represent a translation"""
+
+    x = T.as_tensor_variable(x)
 
     m = T.eye(4, 4)
     m = T.set_subtensor(m[0,0], x[0])

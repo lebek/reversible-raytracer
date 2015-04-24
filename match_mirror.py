@@ -22,7 +22,8 @@ material2 = Material((0.87, 0.1, 0.507), 0.3, 0.9, 0.4, 50.)
 
 objs = [
     Sphere(translate(center1), material1),
-    Sphere(translate(center2), material2)
+    Sphere(translate(center2), material2),
+    UnitSquare(translate((0, 0, 2)), material2)
 ]
 
 light = Light((-1., -1., 2.), (1., 0.87, 0.961))
