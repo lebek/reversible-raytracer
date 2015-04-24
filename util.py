@@ -7,6 +7,10 @@ from matplotlib import pyplot as plt
 from scipy.misc import imsave
 
 
+def broadcasted_switch(a, b, c):
+    return T.switch(a.dimshuffle(0, 1, 'x'), b, c)
+
+
 def transNorm(transM, vec):
 
 

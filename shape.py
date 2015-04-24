@@ -2,15 +2,14 @@ import numpy as np
 import theano.tensor as T
 import theano
 
-from scenemaker import *
-from variable_set import *
+from scene import *
 from util import *
 
-class SceneObject:
+class Shape:
     def __init__(self, name):
         pass
 
-class UnitSquare(SceneObject):
+class UnitSquare(Shape):
     def __init__(self, o2w, material):
         '''UnitSquare defined on the xy-plane, with vertices (0.5, 0.5, 0),
         (-0.5, 0.5, 0), (-0.5, -0.5, 0), (0.5, -0.5, 0), and normal (0, 0, 1).'''
@@ -66,7 +65,7 @@ class UnitSquare(SceneObject):
         return norm
 
 
-class Sphere(SceneObject):
+class Sphere(Shape):
     def __init__(self, o2w, material):
         self.o2w = o2w
         self.w2o = o2w.inverse()

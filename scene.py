@@ -3,68 +3,15 @@ import theano.tensor as T
 import theano
 import copy
 
-from scene_object import *
+from shape import *
 from variable_set import *
 from util import *
 from transform import *
 
-def broadcasted_switch(a, b, c):
-    return T.switch(a.dimshuffle(0, 1, 'x'), b, c)
-
-
-class Shader:
-    pass
-
-
-class DepthMapShader(Shader):
-
-    def __init__(self, maxDepth):
-        self.maxDepth = maxDepth
-
-    def shade(self, scene_object, lights, camera):
-        distance = scene_object.distance(camera.rays)
-        minv = 0
-        maxv = self.maxDepth
-        scaled = (distance - minv) / (maxv - minv)
-        return (1 - scaled).dimshuffle(0, 1, 'x') * [1., 1., 1.]
-
-
-class PhongShader(Shader):
-
-    def __init__(self):
-        pass
-
-    def shade(self, scene_object, lights, camera):
-        # See: http://en.wikipedia.org/wiki/Phong_reflection_model#Description
-
-        # Since our material params are 1d we calculate bw shadings first and
-        # convert to color after
-        light = lights[0]
-        material = scene_object.material
-        normals = scene_object.normals(camera.rays)
-
-        ambient_light = material.ka
-
-        # diffuse (lambertian)
-        diffuse_shadings = material.kd*T.tensordot(normals, -light.normed_dir(), 1)
-
-        # specular
-        rm = 2.0*(T.tensordot(normals, -light.normed_dir(), 1).dimshuffle(
-            0, 1, 'x'))*normals + light.normed_dir()
-        specular_shadings = material.ks*(T.tensordot(rm, camera.look_at, 1) ** material.shininess)
-
-        # phong
-        phong_shadings = ambient_light + diffuse_shadings + specular_shadings
-
-        colorized = phong_shadings.dimshuffle(0, 1, 'x') * material.color.dimshuffle('x', 'x', 0) * light.intensity.dimshuffle('x', 'x', 0)
-        clipped = T.clip(colorized, 0, 1)
-        distances = scene_object.distance(camera.rays)
-        return broadcasted_switch(T.isinf(distances), [0., 0., 0.], clipped)
-
 
 class Scene:
-    def __init__(self, objects, lights, camera, shader):
-        self.objects = objects
+    def __init__(self, shapes, lights, camera, shader):
+        self.shapes = shapes
         self.lights = lights
         self.camera = camera
         self.shader = shader
@@ -88,12 +35,12 @@ class Scene:
             image_per_sample = T.alloc(0.0, self.camera.x_dims, self.camera.y_dims, 3)
             min_dists = T.alloc(float('inf'), self.camera.x_dims, self.camera.y_dims)
 
-            # for each object find its shadings and draw closer objects on top
-            for obj in self.objects:
-                dists = obj.distance(self.camera.rays)
-                shadings = self.shader.shade(obj, self.lights, self.camera)
-                #for each object != obj, draw shadow of object on obj
-                #for obj2 in self.objects:
+            # for each shape find its shadings and draw closer shapes on top
+            for shape in self.shapes:
+                dists = shape.distance(self.camera.rays)
+                shadings = self.shader.shade(shape, self.lights, self.camera)
+                #for each shape != obj, draw shadow of shape on obj
+                #for obj2 in self.shapes:
                 #    if obj == obj2: continue
                 #    shadings = broadcasted_switch(obj2.shadow(
                 #        obj.surface_pts(self.camera.rays), self.lights) < 0, shadings, [0., 0., 0.])

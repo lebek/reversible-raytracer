@@ -4,7 +4,8 @@ from grad_descent import GDOptimizer
 import theano
 from util import *
 from transform import *
-from scenemaker import *
+from scene import *
+from shader import *
 
 if not os.path.exists('output'):
     os.makedirs('output')
