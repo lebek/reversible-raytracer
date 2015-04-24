@@ -4,7 +4,6 @@ import theano
 import copy
 
 from shape import *
-from variable_set import *
 from util import *
 from transform import *
 

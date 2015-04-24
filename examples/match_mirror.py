@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from grad_descent import GDOptimizer
+from optimize import GDOptimizer
 import theano
 from util import *
 from transform import *
