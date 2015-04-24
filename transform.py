@@ -20,8 +20,8 @@ class VectorField():
 
 class RayField():
     def __init__(self, origin, directions):
-        self.origin = origin
-        self.rays = directions
+        self.origin = T.as_tensor_variable(origin)
+        self.rays = T.as_tensor_variable(directions)
 
 
 class Transform():
@@ -73,7 +73,7 @@ def translate(x):
 
 
 def scale(x):
-    """Creates a transform matrix to represent a translation"""
+    """Creates a transform matrix to represent a scaling"""
 
     x = T.as_tensor_variable(x)
 
@@ -88,3 +88,32 @@ def scale(x):
     mInv = T.set_subtensor(mInv[2,2], 1./x[2])
 
     return Transform(m, mInv)
+
+def rotate(angle, axis):
+    """Creates a transform matrix to represent a rotation"""
+
+    angle = T.as_tensor_variable(angle)
+    axis = T.as_tensor_variable(axis)
+    a = axis
+
+    radians = angle*np.pi/180.0
+    s = T.sin(radians)
+    c = T.cos(radians)
+
+    m = T.alloc(0., 4, 4)
+
+    m = T.set_subtensor(m[0,0], a[0] * a[0] + (1. - a[0] * a[0]) * c)
+    m = T.set_subtensor(m[0,1], a[0] * a[1] * (1. - c) - a[2] * s)
+    m = T.set_subtensor(m[0,2], a[0] * a[2] * (1. - c) + a[1] * s)
+
+    m = T.set_subtensor(m[1,0], a[0] * a[1] * (1. - c) + a[2] * s)
+    m = T.set_subtensor(m[1,1], a[1] * a[1] + (1. - a[1] * a[1]) * c)
+    m = T.set_subtensor(m[1,2], a[1] * a[2] * (1. - c) - a[0] * s)
+
+    m = T.set_subtensor(m[2,0], a[0] * a[2] * (1. - c) - a[1] * s)
+    m = T.set_subtensor(m[2,1], a[1] * a[2] * (1. - c) + a[0] * s)
+    m = T.set_subtensor(m[2,2], a[2] * a[2] + (1. - a[2] * a[2]) * c)
+
+    m = T.set_subtensor(m[3,3], 1)
+
+    return Transform(m, m.T)

@@ -12,9 +12,9 @@ if not os.path.exists('output'):
 
 tv = lambda x: T.as_tensor_variable(np.array(x))
 
-center1 = theano.shared(np.asarray([-.5, -.5, 3], dtype=theano.config.floatX),
+center1 = theano.shared(np.asarray([-.5, -.5, 4], dtype=theano.config.floatX),
                        borrow=True)
-center2 = theano.shared(np.asarray([.5, .5, 3], dtype=theano.config.floatX),
+center2 = theano.shared(np.asarray([.5, .5, 4], dtype=theano.config.floatX),
                        borrow=True)
 
 material1 = Material((0.2, 0.9, 0.4), 0.3, 0.7, 0.5, 50.)
@@ -23,7 +23,7 @@ material2 = Material((0.87, 0.1, 0.507), 0.3, 0.9, 0.4, 50.)
 objs = [
     Sphere(translate(center1), material1),
     Sphere(translate(center2), material2),
-    UnitSquare(translate((0, 0, 2)), material2)
+    UnitSquare(translate((0, 0, 3))*rotate(50, [0., 1., 0.]), material2)
 ]
 
 light = Light((-1., -1., 2.), (1., 0.87, 0.961))
