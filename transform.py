@@ -53,9 +53,12 @@ class Transform():
         #elif isinstance(x, Ray):
         #    return Ray(self(x.o), self(x.d))
 
+def identity():
+    """Returns the identity transform"""
+    return Transform(np.eye(4, 4), np.eye(4, 4))
 
 def translate(x):
-    """Returns a transform matrix to represent a translation"""
+    """Returns a transform to represent a translation"""
 
     x = T.as_tensor_variable(x)
 
@@ -73,7 +76,7 @@ def translate(x):
 
 
 def scale(x):
-    """Creates a transform matrix to represent a scaling"""
+    """Returns a transform to represent a scaling"""
 
     x = T.as_tensor_variable(x)
 
@@ -90,7 +93,7 @@ def scale(x):
     return Transform(m, mInv)
 
 def rotate(angle, axis):
-    """Creates a transform matrix to represent a rotation"""
+    """Returns a transform to represent a rotation"""
 
     angle = T.as_tensor_variable(angle)
     axis = T.as_tensor_variable(axis)

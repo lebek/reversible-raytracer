@@ -9,6 +9,10 @@ class Shape:
     def __init__(self, name):
         pass
 
+    def setTransform(self, o2w):
+        self.o2w = o2w
+        self.w2o = o2w.inverse()
+
 class UnitSquare(Shape):
     def __init__(self, o2w, material):
         '''UnitSquare defined on the xy-plane, with vertices (0.5, 0.5, 0),
