@@ -13,9 +13,9 @@ class Shape:
         self.o2w = o2w
         self.w2o = o2w.inverse()
 
-class UnitSquare(Shape):
+class Square(Shape):
     def __init__(self, o2w, material):
-        '''UnitSquare defined on the xy-plane, with vertices (0.5, 0.5, 0),
+        '''Square defined on the xy-plane, with vertices (0.5, 0.5, 0),
         (-0.5, 0.5, 0), (-0.5, -0.5, 0), (0.5, -0.5, 0), and normal (0, 0, 1).'''
 
         self.o2w = o2w
@@ -27,10 +27,10 @@ class UnitSquare(Shape):
         ts = -origin[2] / rays[:,:,2] #t is the
         mask_positive_t = T.gt(ts, 0)
         intersection = origin + ts.dimshuffle(0, 1, 'x')* rays
-        mask_interior_of_unitsquare_x = T.gt(intersection[:,:,0], -0.5) * T.lt(intersection[:,:,0],0.5)
-        mask_interior_of_unitsquare_y = T.gt(intersection[:,:,1], -0.5) * T.lt(intersection[:,:,1],0.5)
-        mask_interior_of_unitsquare = mask_interior_of_unitsquare_x * mask_interior_of_unitsquare_y
-        mask = mask_interior_of_unitsquare * mask_positive_t\
+        mask_interior_of_square_x = T.gt(intersection[:,:,0], -0.5) * T.lt(intersection[:,:,0],0.5)
+        mask_interior_of_square_y = T.gt(intersection[:,:,1], -0.5) * T.lt(intersection[:,:,1],0.5)
+        mask_interior_of_square = mask_interior_of_square_x * mask_interior_of_square_y
+        mask = mask_interior_of_square * mask_positive_t\
                         * mask_not_parallel_xy_plane
 
         all_falses = (1-mask)
