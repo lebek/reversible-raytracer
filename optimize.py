@@ -56,6 +56,7 @@ class MGDAutoOptimizer:
 
 from scipy import misc
 train_data = [misc.imread('output/0.jpg')[:,:,0].flatten().astype('float32')/255.0]
+#train_data = [misc.imread('output/0.png')[:,:,0].flatten().astype('float32')/255.0]
 
 #from scipy import ndimage
 #train_data = [ndimage.imread('output/0.jpg', mode='RGB')[:,:,0].flatten().astype('float32')/255.0]
@@ -80,21 +81,23 @@ def scene(center1):
     scene = Scene(shapes, [light], camera, shader)
     return scene.build()
 
-ae = Autoencoder(scene, 128*128, 100, 100)
-
+ae = Autoencoder(scene, 128*128, 100, 10)
+import pdb; pdb.set_trace()
 opt = MGDAutoOptimizer(ae)
-train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.0001)
+train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.01)
 
 get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
+get_centre = theano.function([], ae.encoder(train_data[0]))
 
 n=0
 while (n<1000):
     train_loss = train_ae()
-    print '...Epoch %d Train loss %g' % (n, train_loss)
+    center_i =get_centre()
+    print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
+                    % (n, train_loss,center_i[0], center_i[1], center_i[2])
 #    ggg =get_grad()
 #    gbb =get_gradb()
     #import pdb; pdb.set_trace()
     image = get_recon()
     imsave('test%d.png' % (n,), image)
-
     n+=1
