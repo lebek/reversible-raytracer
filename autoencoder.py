@@ -52,7 +52,8 @@ class Autoencoder():
         self.params = [self.l2_to_rvar,
                        self.rvar_biases]
 
-
+    def get_reconstruct(self,X):
+        return self.decoder(self.encoder(X))
 
     def encoder(self, X):
         #h1 = T.nnet.sigmoid(T.dot(X, self.vis_to_l1) + self.l1_biases)
