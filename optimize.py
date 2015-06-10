@@ -52,8 +52,11 @@ class MGDAutoOptimizer:
         get_gradb = theano.function([], grads[1], givens={X:train_data[0]})
         return opt, get_grad, get_gradb
 
-from scipy import ndimage
-train_data = [ndimage.imread('output/0.jpg', mode='RGB')[:,:,0].flatten().astype('float32')]
+#from scipy import ndimage
+from scipy import misc
+import pdb; pdb.set_trace()
+train_data = [misc.imread('output/0.png')]
+#train_data = [misc.imread('output/0.jpg')[:,:,0].flatten().astype('float32')]
 
 #center1 = theano.shared(np.asarray([-.5, -.5, 4], dtype=theano.config.floatX),
 #                       borrow=True)

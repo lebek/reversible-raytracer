@@ -39,7 +39,7 @@ image = scene.build()
 render_fn = theano.function([], image, on_unused_input='ignore')
 
 def random_transform(v):
-    v.set_value((rand()*4-2, rand()*4-2, rand()*2+4))
+    v.set_value((float(rand())*4-2, float(rand())*4-2, float(rand())*2+4))
 
 dataset = np.zeros((n, x_dims, y_dims), dtype=np.uint8)
 for i in range(n):
