@@ -77,13 +77,13 @@ def scene(center1):
 ae = Autoencoder(scene, 128*128, 100, 100)
 
 opt = MGDAutoOptimizer(ae)
-train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.001)
+train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.01)
 
 n=0
 while (n<30):
     train_loss = train_ae()
     print '...Epoch %d Train loss %g' % (n, train_loss)
-    ggg =get_grad()
-    gbb =get_gradb()
-    import pdb; pdb.set_trace()
+#    ggg =get_grad()
+#    gbb =get_gradb()
+#    import pdb; pdb.set_trace()
     n+=1
