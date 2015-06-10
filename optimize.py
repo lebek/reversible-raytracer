@@ -53,7 +53,7 @@ class MGDAutoOptimizer:
         return opt, get_grad, get_gradb
 
 from scipy import ndimage
-train_data = [ndimage.imread('output/0.jpg', mode='RGB')[:,:,0].flatten().astype('float32')]
+train_data = [ndimage.imread('output/0.jpg', mode='RGB')[:,:,0].flatten().astype('float32')/255.0]
 
 #center1 = theano.shared(np.asarray([-.5, -.5, 4], dtype=theano.config.floatX),
 #                       borrow=True)
