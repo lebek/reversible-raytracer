@@ -55,8 +55,7 @@ class MGDAutoOptimizer:
 
 
 from scipy import misc
-import pdb; pdb.set_trace()
-train_data = [misc.imread('output/0.png')[:,:,0].flatten().astype('float32')/255.0]
+train_data = [misc.imread('output/0.jpg')[:,:,0].flatten().astype('float32')/255.0]
 
 #from scipy import ndimage
 #train_data = [ndimage.imread('output/0.jpg', mode='RGB')[:,:,0].flatten().astype('float32')/255.0]
@@ -84,19 +83,18 @@ def scene(center1):
 ae = Autoencoder(scene, 128*128, 100, 100)
 
 opt = MGDAutoOptimizer(ae)
-train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.01)
+train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.0001)
 
 get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
 
 n=0
-while (n<30):
+while (n<1000):
     train_loss = train_ae()
     print '...Epoch %d Train loss %g' % (n, train_loss)
 #    ggg =get_grad()
 #    gbb =get_gradb()
-#    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
+    image = get_recon()
+    imsave('test%d.png' % (n,), image)
+
     n+=1
-
-image = get_recon()
-
-
