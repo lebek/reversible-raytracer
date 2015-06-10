@@ -55,8 +55,8 @@ class MGDAutoOptimizer:
 
 
 from scipy import misc
-#train_data = [misc.imread('output/0.jpg')[:,:,0].flatten().astype('float32')/255.0]
-train_data = [misc.imread('output/0.png')[:,:,0].flatten().astype('float32')/255.0]
+train_data = [misc.imread('15.jpg').flatten().astype('float32')/255.0]
+#train_data = [misc.imread('output/15.png')[:,:,0].flatten().astype('float32')/255.0]
 
 #from scipy import ndimage
 #train_data = [ndimage.imread('output/0.jpg', mode='RGB')[:,:,0].flatten().astype('float32')/255.0]
@@ -76,14 +76,14 @@ def scene(center1):
     ]
 
     light = Light((-1., -1., 2.), (0.961, 1., 0.87))
-    camera = Camera(128, 128)
+    camera = Camera(32, 32)
     shader = PhongShader()
     scene = Scene(shapes, [light], camera, shader)
     return scene.build()
 
-ae = Autoencoder(scene, 128*128, 100, 50, 10)
+ae = Autoencoder(scene, 32*32, 100, 50, 10)
 opt = MGDAutoOptimizer(ae)
-train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.001)
+train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.1)
 
 get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
 get_centre = theano.function([], ae.encoder(train_data[0]))
@@ -96,6 +96,7 @@ print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
 
 while (n<1000):
     n+=1
+    print get_grad().sum()
     train_loss = train_ae()
     center_i =get_centre()
     print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
