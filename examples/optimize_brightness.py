@@ -3,10 +3,9 @@ import numpy as np
 from optimize import GDOptimizer
 import theano
 from util import *
-from scene_setup import *
 
 ### Hyper-parameters ###
-OptmizeFlag=True
+OptmizeFlag=False
 #-----------------------
 
 
