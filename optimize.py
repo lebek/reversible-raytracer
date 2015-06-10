@@ -105,6 +105,3 @@ while (n<1000):
     #import pdb; pdb.set_trace()
     image = get_recon()
     imsave('test%d.png' % (n,), image)
-
-
-
