@@ -81,7 +81,7 @@ def scene(center1):
     scene = Scene(shapes, [light], camera, shader)
     return scene.build()
 
-ae = Autoencoder(scene, 32*32, 100, 50, 10)
+ae = Autoencoder(scene, 32*32, 100, 30, 5)
 opt = MGDAutoOptimizer(ae)
 train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.1)
 
