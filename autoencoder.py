@@ -55,10 +55,13 @@ class Autoencoder():
         return self.decoder(self.encoder(X))
 
     def encoder(self, X):
+        #rvar = T.dot(X, self.l2_to_rvar) + self.rvar_biases
+        #rvar = T.set_subtensor(rvar[0], rvar[0].clip(-1,1))
+        #rvar = T.set_subtensor(rvar[1], rvar[1].clip(-1,1))
+        #rvar = T.set_subtensor(rvar[2], rvar[2].clip(3,5))
         h1 = T.nnet.sigmoid(T.dot(X, self.vis_to_l1) + self.l1_biases)
         h2 = T.nnet.sigmoid(T.dot(h1, self.l1_to_l2) + self.l2_biases)
         rvar = T.dot(h2, self.l2_to_rvar) + self.rvar_biases
-        #rvar = T.dot(h1, self.l2_to_rvar) + self.rvar_biases
         return rvar
 
     def decoder(self, hidden):
@@ -67,7 +70,4 @@ class Autoencoder():
     def minimize_cost(self,  X):
         h3 = self.encoder(X)
         reconImage = self.decoder(h3)[:,:,0].flatten()
-        #reconImage = T.sum(self.decoder(h3))
         return T.sum((X-reconImage)**2)
-
-
