@@ -71,9 +71,9 @@ class Autoencoder():
         #rvar = T.set_subtensor(rvar[0], rvar[0].clip(-1,1))
         #rvar = T.set_subtensor(rvar[1], rvar[1].clip(-1,1))
         #rvar = T.set_subtensor(rvar[2], rvar[2].clip(3,5))
-        h1 = T.nnet.sigmoid(T.dot(X, self.vis_to_l1) + self.l1_biases)
-        h2 = T.nnet.sigmoid(T.dot(h1, self.l1_to_l2) + self.l2_biases)
-        h3 = T.nnet.sigmoid(T.dot(h2, self.l2_to_l3) + self.l3_biases)
+        h1 = T.tanh(T.dot(X, self.vis_to_l1) + self.l1_biases)
+        h2 = T.tanh(T.dot(h1, self.l1_to_l2) + self.l2_biases)
+        h3 = T.tanh(T.dot(h2, self.l2_to_l3) + self.l3_biases)
         rvar = T.dot(h3, self.l3_to_rvar) + self.rvar_biases
         return rvar
 

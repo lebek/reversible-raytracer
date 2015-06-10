@@ -83,7 +83,7 @@ def scene(center1):
 
 ae = Autoencoder(scene, 128*128, 100, 50, 10)
 opt = MGDAutoOptimizer(ae)
-train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.01)
+train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.001)
 
 get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
 get_centre = theano.function([], ae.encoder(train_data[0]))
