@@ -82,7 +82,6 @@ def scene(center1):
     return scene.build()
 
 ae = Autoencoder(scene, 128*128, 100, 10)
-import pdb; pdb.set_trace()
 opt = MGDAutoOptimizer(ae)
 train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.01)
 
@@ -106,6 +105,3 @@ while (n<1000):
     #import pdb; pdb.set_trace()
     image = get_recon()
     imsave('test%d.png' % (n,), image)
-
-
-

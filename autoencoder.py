@@ -13,7 +13,7 @@ class Autoencoder():
         self.n_hidden_l2 = n_hidden_l2
 
         vis_to_l1 = np.asarray(
-
+            np.random.uniform(
                 low=-4 * np.sqrt(6. / (n_visible + n_hidden_l1)),
                 high=4 * np.sqrt(6. / (n_visible + n_hidden_l1)),
                 size=(n_visible, n_hidden_l1)
@@ -62,6 +62,9 @@ class Autoencoder():
         h1 = T.nnet.sigmoid(T.dot(X, self.vis_to_l1) + self.l1_biases)
         h2 = T.nnet.sigmoid(T.dot(h1, self.l1_to_l2) + self.l2_biases)
         rvar = T.dot(h2, self.l2_to_rvar) + self.rvar_biases
+        rvar = T.set_subtensor(rvar[0], rvar[0].clip(-1,1))
+        rvar = T.set_subtensor(rvar[1], rvar[1].clip(-1,1))
+        rvar = T.set_subtensor(rvar[2], rvar[2].clip(2,8))
         return rvar
 
     def decoder(self, hidden):
