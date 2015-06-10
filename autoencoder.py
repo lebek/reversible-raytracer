@@ -67,7 +67,7 @@ class Autoencoder():
     def decoder(self, hidden):
         return self.scene(hidden)
 
-    def minimize_cost(self,  X):
+    def cost(self,  X):
         h3 = self.encoder(X)
         reconImage = self.decoder(h3)[:,:,0].flatten()
         return T.sum((X-reconImage)**2)

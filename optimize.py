@@ -36,7 +36,7 @@ class MGDAutoOptimizer:
 
         X = T.fvector('X')
         #i = T.lscalar('i')
-        cost = self.ae.minimize_cost(X)
+        cost = self.ae.cost(X)
         grads = T.grad(cost, self.ae.params)
         update_vars = []
         for var, gvar in zip(self.ae.params, grads):
@@ -88,9 +88,15 @@ train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.01)
 
 get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
 get_centre = theano.function([], ae.encoder(train_data[0]))
+get_cost  = theano.function([], ae.cost(train_data[0]))
 
-n=0
+n=0;
+center_i =get_centre()
+print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
+                    % (n, get_cost(),center_i[0], center_i[1], center_i[2])
+
 while (n<1000):
+    n+=1
     train_loss = train_ae()
     center_i =get_centre()
     print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
@@ -100,4 +106,6 @@ while (n<1000):
     #import pdb; pdb.set_trace()
     image = get_recon()
     imsave('test%d.png' % (n,), image)
-    n+=1
+
+
+
