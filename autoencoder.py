@@ -13,7 +13,7 @@ class Autoencoder():
         self.n_hidden_l2 = n_hidden_l2
 
         vis_to_l1 = np.asarray(
-            np.random.uniform(
+
                 low=-4 * np.sqrt(6. / (n_visible + n_hidden_l1)),
                 high=4 * np.sqrt(6. / (n_visible + n_hidden_l1)),
                 size=(n_visible, n_hidden_l1)
@@ -38,7 +38,7 @@ class Autoencoder():
         self.l1_to_l2 = theano.shared(l1_to_l2, name="l1_to_l2", borrow=True)
 
         self.l2_to_rvar = theano.shared(
-            0.0001*np.asarray(
+            np.asarray(
                 np.random.uniform(
                     low=-4 * np.sqrt(6. / 3+n_hidden_l2),
                     high=4 * np.sqrt(6. / 3+n_hidden_l2),
@@ -49,8 +49,7 @@ class Autoencoder():
 
         self.params = [self.vis_to_l1, self.l1_to_l2, self.l2_to_rvar,
                        self.l1_biases, self.l2_biases, self.rvar_biases]
-        #self.params = [self.vis_to_l1, self.l2_to_rvar,
-        #               self.l1_biases, self.rvar_biases]
+
 
     def get_reconstruct(self,X):
         return self.decoder(self.encoder(X))
