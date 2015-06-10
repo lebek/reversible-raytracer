@@ -1,7 +1,11 @@
 import numpy as np
 import theano.tensor as T
 import theano
+from autoencoder import Autoencoder
 
+from transform import *
+from scene import *
+from shader import *
 
 class GDOptimizer:
     """
@@ -21,3 +25,65 @@ class GDOptimizer:
             updateVars.append((var, var - lr * gvar))
 
         return theano.function([], loss, updates=updateVars)
+
+
+class MGDAutoOptimizer:
+
+    def __init__(self, ae):
+        self.ae = ae
+
+    def optimize(self, train_data, lr):
+
+        X = T.fvector('X')
+        #i = T.lscalar('i')
+        cost = self.ae.minimize_cost(X)
+        grads = T.grad(cost, self.ae.params)
+        update_vars = []
+        for var, gvar in zip(self.ae.params, grads):
+            update_vars.append((var, var-lr*gvar))
+
+        #optimize = theano.function([i], cost, updates=updateVars,
+        #            given={X:train_data[i*batch_sz:(i+1)*batch_sz]}
+
+        opt = theano.function([], cost, updates=update_vars,
+                              givens={X: train_data[0]})
+
+        get_grad = theano.function([], grads[0], givens={X:train_data[0]})
+        get_gradb = theano.function([], grads[1], givens={X:train_data[0]})
+        return opt, get_grad, get_gradb
+
+from scipy import ndimage
+train_data = [ndimage.imread('output/0.jpg', mode='RGB')[:,:,0].flatten().astype('float32')]
+
+#center1 = theano.shared(np.asarray([-.5, -.5, 4], dtype=theano.config.floatX),
+#                       borrow=True)
+
+def scene(center1):
+
+    material1 = Material((0.2, 0.9, 0.4), 0.3, 0.7, 0.5, 50.)
+
+    t1 = translate(center1)
+
+    shapes = [
+        Sphere(t1, material1)
+    ]
+
+    light = Light((-1., -1., 2.), (0.961, 1., 0.87))
+    camera = Camera(128, 128)
+    shader = PhongShader()
+    scene = Scene(shapes, [light], camera, shader)
+    return scene.build()
+
+ae = Autoencoder(scene, 128*128, 100, 100)
+
+opt = MGDAutoOptimizer(ae)
+train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.001)
+
+n=0
+while (n<30):
+    train_loss = train_ae()
+    print '...Epoch %d Train loss %g' % (n, train_loss)
+    ggg =get_grad()
+    gbb =get_gradb()
+    import pdb; pdb.set_trace()
+    n+=1
