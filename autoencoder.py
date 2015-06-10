@@ -30,36 +30,36 @@ class Autoencoder():
             dtype=theano.config.floatX
         )
 
-        #self.l1_biases = theano.shared(np.zeros(n_hidden_l1), borrow=True)
-        #self.l2_biases = theano.shared(np.zeros(n_hidden_l2), borrow=True)
+        self.l1_biases = theano.shared(np.zeros(n_hidden_l1), borrow=True)
+        self.l2_biases = theano.shared(np.zeros(n_hidden_l2), borrow=True)
         self.rvar_biases = theano.shared(np.zeros(3), borrow=True)
 
-        #self.vis_to_l1 = theano.shared(vis_to_l1, name="vis_to_l1", borrow=True)
-        #self.l1_to_l2 = theano.shared(l1_to_l2, name="l1_to_l2", borrow=True)
+        self.vis_to_l1 = theano.shared(vis_to_l1, name="vis_to_l1", borrow=True)
+        self.l1_to_l2 = theano.shared(l1_to_l2, name="l1_to_l2", borrow=True)
 
         self.l2_to_rvar = theano.shared(
             0.0001*np.asarray(
                 np.random.uniform(
                     low=-4 * np.sqrt(6. / 3+n_hidden_l2),
                     high=4 * np.sqrt(6. / 3+n_hidden_l2),
-                    size=(n_visible, 3)
+                    size=(n_hidden_l2, 3)
                 ), dtype=theano.config.floatX),
             borrow=True
         )
 
-        #self.params = [self.vis_to_l1, self.l1_to_l2, self.l2_to_rvar,
-        #               self.l1_biases, self.l2_biases, self.rvar_biases]
-        self.params = [self.l2_to_rvar,
-                       self.rvar_biases]
+        self.params = [self.vis_to_l1, self.l1_to_l2, self.l2_to_rvar,
+                       self.l1_biases, self.l2_biases, self.rvar_biases]
+        #self.params = [self.vis_to_l1, self.l2_to_rvar,
+        #               self.l1_biases, self.rvar_biases]
 
     def get_reconstruct(self,X):
         return self.decoder(self.encoder(X))
 
     def encoder(self, X):
-        #h1 = T.nnet.sigmoid(T.dot(X, self.vis_to_l1) + self.l1_biases)
-        #h2 = T.nnet.sigmoid(T.dot(h1, self.l1_to_l2) + self.l2_biases)
-        #rvar = T.nnet.sigmoid(T.dot(X, self.l2_to_rvar) + self.rvar_biases)
-        rvar = T.dot(X, self.l2_to_rvar) + self.rvar_biases
+        h1 = T.nnet.sigmoid(T.dot(X, self.vis_to_l1) + self.l1_biases)
+        h2 = T.nnet.sigmoid(T.dot(h1, self.l1_to_l2) + self.l2_biases)
+        rvar = T.dot(h2, self.l2_to_rvar) + self.rvar_biases
+        #rvar = T.dot(h1, self.l2_to_rvar) + self.rvar_biases
         return rvar
 
     def decoder(self, hidden):

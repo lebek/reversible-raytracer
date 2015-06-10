@@ -55,7 +55,6 @@ class MGDAutoOptimizer:
 
 
 from scipy import misc
-import pdb; pdb.set_trace()
 train_data = [misc.imread('output/0.png')[:,:,0].flatten().astype('float32')/255.0]
 
 #from scipy import ndimage
@@ -81,8 +80,8 @@ def scene(center1):
     scene = Scene(shapes, [light], camera, shader)
     return scene.build()
 
-ae = Autoencoder(scene, 128*128, 100, 100)
-
+ae = Autoencoder(scene, 128*128, 100, 10)
+import pdb; pdb.set_trace()
 opt = MGDAutoOptimizer(ae)
 train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.05)
 get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
@@ -96,7 +95,7 @@ while (n<30):
                     % (n, train_loss,center_i[0], center_i[1], center_i[2])
 #    ggg =get_grad()
 #    gbb =get_gradb()
-#    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     n+=1
 
 image = get_recon()
