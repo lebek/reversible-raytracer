@@ -81,31 +81,32 @@ def scene(center1):
     scene = Scene(shapes, [light], camera, shader)
     return scene.build()
 
-ae = Autoencoder(scene, 32*32, 100, 30, 5)
+if not os.path.exists('output'):
+    os.makedirs('output')
+
+ae = Autoencoder(scene, 32*32, 100, 30, 10)
 opt = MGDAutoOptimizer(ae)
-train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.1)
+train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.005)
 
 get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
 get_centre = theano.function([], ae.encoder(train_data[0]))
 get_cost  = theano.function([], ae.cost(train_data[0]))
 
-n=0;
-center_i =get_centre()
+n = 0
+center_i = get_centre()
 print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
                     % (n, get_cost(),center_i[0], center_i[1], center_i[2])
 
-while (n<5):
+while (n<1000):
     n+=1
 
     ggg =get_grad()
     gbb =get_gradb()
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
 
     train_loss = train_ae()
-    center_i =get_centre()
+    center_i = get_centre()
     print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
                     % (n, train_loss,center_i[0], center_i[1], center_i[2])
     image = get_recon()
-    imsave('test%d.png' % (n,), image)
-
-
+    imsave('output/test%d.png' % (n,), image)
