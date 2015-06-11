@@ -26,8 +26,8 @@ center2 = theano.shared(np.asarray([.5, .5, 4], dtype=theano.config.floatX),
                         borrow=True)
 
 shapes = [
-    Sphere(translate(center1), material1),
-    Sphere(translate(center2), material2)
+    Sphere(translate(center1), material1)
+    #, Sphere(translate(center2), material2)
 ]
 
 light = Light((-1., -1., 2.), (0.961, 1., 0.87))
