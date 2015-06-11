@@ -91,15 +91,17 @@ opt = MGDAutoOptimizer(ae)
 train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.01)
 
 get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
-#get_centre1 = theano.function([], ae.encoder(train_data[0][0]))
-#get_centre2 = theano.function([], ae.encoder(train_data[0][1]))
+get_centre1 = theano.function([], ae.encoder(train_data[0])[0])
+get_centre2 = theano.function([], ae.encoder(train_data[0])[1])
 get_cost  = theano.function([], ae.cost(train_data[0]))
 
 n=0;
-#center_i1 =get_centre1()
-#center_i2 =get_centre2()
-#print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
-#                    % (n, get_cost(),center_i1[0], center_i1[1], center_i1[2])
+
+center_i1 =get_centre1()
+center_i2 =get_centre2()
+print '...Epoch %d Train loss %g, Center1 (%g, %g, %g), Center1 (%g, %g, %g)' \
+                    % (n, get_cost(),center_i1[0], center_i1[1], center_i1[2],\
+                                     center_i2[0], center_i2[1], center_i2[2])
 print '...Epoch %d Train loss %g, ' % (n, get_cost())
 
 while (n<1000):
@@ -110,12 +112,13 @@ while (n<1000):
     #import pdb; pdb.set_trace()
 
     train_loss = train_ae()
-    #center_i1 =get_centre1()
-    #center_i2 =get_centre2()
-    #print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
-    #                % (n, train_loss,center_i[0], center_i1[1], center_i1[2])
+    center_i1 =get_centre1()
+    center_i2 =get_centre2()
+    print '...Epoch %d Train loss %g, Center1 (%g, %g, %g), Center1 (%g, %g, %g)' \
+                    % (n, get_cost(),center_i1[0], center_i1[1], center_i1[2],\
+                                     center_i2[0], center_i2[1], center_i2[2])
 
-    print '...Epoch %d Train loss %g, ' \
-                % (n, train_loss)
+    #print '...Epoch %d Train loss %g, ' \
+    #            % (n, train_loss)
     image = get_recon()
     imsave('output/test%d.png' % (n,), image)
