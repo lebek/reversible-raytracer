@@ -97,7 +97,6 @@ center_i2 =get_centre2()
 print '...Epoch %d Train loss %g, Center1 (%g, %g, %g), Center1 (%g, %g, %g)' \
                     % (n, get_cost(),center_i1[0], center_i1[1], center_i1[2],\
                                      center_i2[0], center_i2[1], center_i2[2])
-print '...Epoch %d Train loss %g, ' % (n, get_cost()) 
 
 while (n<5):
     n+=1
@@ -113,8 +112,6 @@ while (n<5):
                     % (n, get_cost(),center_i1[0], center_i1[1], center_i1[2],\
                                      center_i2[0], center_i2[1], center_i2[2])
 
-    #print '...Epoch %d Train loss %g, ' \
-    #            % (n, train_loss) 
     image = get_recon()
     imsave('test%d.png' % (n,), image)
 
