@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import theano.tensor as T
 import theano
@@ -56,7 +57,7 @@ class MGDAutoOptimizer:
 
 from scipy import misc
 train_data = [misc.imread('15.jpg').flatten().astype('float32')/255.0]
-#train_data = [misc.imread('output/15.png')[:,:,0].flatten().astype('float32')/255.0]
+#train_data = [misc.imread('15.png').flatten().astype('float32')/255.0]
 
 #from scipy import ndimage
 #train_data = [ndimage.imread('output/0.jpg', mode='RGB')[:,:,0].flatten().astype('float32')/255.0]
@@ -65,14 +66,15 @@ train_data = [misc.imread('15.jpg').flatten().astype('float32')/255.0]
 #center1 = theano.shared(np.asarray([-.5, -.5, 4], dtype=theano.config.floatX),
 #                       borrow=True)
 
-def scene(center1):
+def scene(center1, center2):
 
     material1 = Material((0.2, 0.9, 0.4), 0.3, 0.7, 0.5, 50.)
 
     t1 = translate(center1)
+    t2 = translate(center2)
 
     shapes = [
-        Sphere(t1, material1)
+        Sphere(t1, material1), Sphere(t2, material1)
     ]
 
     light = Light((-1., -1., 2.), (0.961, 1., 0.87))
@@ -84,18 +86,21 @@ def scene(center1):
 if not os.path.exists('output'):
     os.makedirs('output')
 
-ae = Autoencoder(scene, 32*32, 100, 30, 10)
+ae = Autoencoder(scene, 32*32, 300, 30, 10)
 opt = MGDAutoOptimizer(ae)
-train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.005)
+train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.01)
 
 get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
-get_centre = theano.function([], ae.encoder(train_data[0]))
+#get_centre1 = theano.function([], ae.encoder(train_data[0][0]))
+#get_centre2 = theano.function([], ae.encoder(train_data[0][1]))
 get_cost  = theano.function([], ae.cost(train_data[0]))
 
-n = 0
-center_i = get_centre()
-print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
-                    % (n, get_cost(),center_i[0], center_i[1], center_i[2])
+n=0;
+#center_i1 =get_centre1()
+#center_i2 =get_centre2()
+#print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
+#                    % (n, get_cost(),center_i1[0], center_i1[1], center_i1[2])
+print '...Epoch %d Train loss %g, ' % (n, get_cost())
 
 while (n<1000):
     n+=1
@@ -105,8 +110,12 @@ while (n<1000):
     #import pdb; pdb.set_trace()
 
     train_loss = train_ae()
-    center_i = get_centre()
-    print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
-                    % (n, train_loss,center_i[0], center_i[1], center_i[2])
+    #center_i1 =get_centre1()
+    #center_i2 =get_centre2()
+    #print '...Epoch %d Train loss %g, Centre (%g, %g, %g)' \
+    #                % (n, train_loss,center_i[0], center_i1[1], center_i1[2])
+
+    print '...Epoch %d Train loss %g, ' \
+                % (n, train_loss)
     image = get_recon()
     imsave('output/test%d.png' % (n,), image)
