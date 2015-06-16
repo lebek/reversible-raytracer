@@ -56,8 +56,8 @@ class MGDAutoOptimizer:
 
 
 from scipy import misc
-train_data = [misc.imread('15.jpg').flatten().astype('float32')/255.0]
-#train_data = [misc.imread('15.png').flatten().astype('float32')/255.0]
+#train_data = [misc.imread('15.jpg').flatten().astype('float32')/255.0]
+train_data = [misc.imread('15.png').flatten().astype('float32')/255.0]
 
 #from scipy import ndimage
 #train_data = [ndimage.imread('output/0.jpg', mode='RGB')[:,:,0].flatten().astype('float32')/255.0]
@@ -86,6 +86,7 @@ def scene(center1, center2):
 if not os.path.exists('output'):
     os.makedirs('output')
 
+import pdb; pdb.set_trace()
 ae = Autoencoder(scene, 32*32, 300, 30, 10)
 opt = MGDAutoOptimizer(ae)
 train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.01)
@@ -96,25 +97,24 @@ get_centre2 = theano.function([], ae.encoder(train_data[0])[1])
 get_cost  = theano.function([], ae.cost(train_data[0]))
 
 n=0;
+#center_i1 =get_centre1()
+#center_i2 =get_centre2()
+#print '...Epoch %d Train loss %g, Center1 (%g, %g, %g), Center1 (%g, %g, %g)' \
+#                    % (n, get_cost(),center_i1[0], center_i1[1], center_i1[2],\
+#                                     center_i2[0], center_i2[1], center_i2[2])
 
-center_i1 =get_centre1()
-center_i2 =get_centre2()
-print '...Epoch %d Train loss %g, Center1 (%g, %g, %g), Center1 (%g, %g, %g)' \
-                    % (n, get_cost(),center_i1[0], center_i1[1], center_i1[2],\
-                                     center_i2[0], center_i2[1], center_i2[2])
-while (n<1000):
+while (n<3):
     n+=1
-
     ggg =get_grad()
     gbb =get_gradb()
-    #import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
 
     train_loss = train_ae()
-    center_i1 =get_centre1()
-    center_i2 =get_centre2()
-    print '...Epoch %d Train loss %g, Center1 (%g, %g, %g), Center1 (%g, %g, %g)' \
-                    % (n, get_cost(),center_i1[0], center_i1[1], center_i1[2],\
-                                     center_i2[0], center_i2[1], center_i2[2])
+    #center_i1 =get_centre1()
+    #center_i2 =get_centre2()
+    #print '...Epoch %d Train loss %g, Center1 (%g, %g, %g), Center1 (%g, %g, %g)' \
+    #                % (n, get_cost(),center_i1[0], center_i1[1], center_i1[2],\
+    #                                 center_i2[0], center_i2[1], center_i2[2])
 
     image = get_recon()
     imsave('output/test%d.png' % (n,), image)

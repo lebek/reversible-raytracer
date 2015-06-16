@@ -66,7 +66,7 @@ class Autoencoder():
 
     def init_capsule_param(self, n_hidden_l3):    
 
-        return 0.1*np.asarray(
+        return np.asarray(
                 np.random.uniform(
                     low=-4 * np.sqrt(6. / 3+n_hidden_l3),
                     high=4 * np.sqrt(6. / 3+n_hidden_l3),
