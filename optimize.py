@@ -56,13 +56,12 @@ class MGDAutoOptimizer:
 
 
 from scipy import misc
-#train_data = [misc.imread('15.jpg').flatten().astype('float32')/255.0]
-train_data = [misc.imread('15.png').flatten().astype('float32')/255.0]
+train_data = [misc.imread('15.jpg').flatten().astype('float32')/255.0]
+#train_data = [misc.imread('15.png').flatten().astype('float32')/255.0]
 
 #from scipy import ndimage
 #train_data = [ndimage.imread('output/0.jpg', mode='RGB')[:,:,0].flatten().astype('float32')/255.0]
-
-
+#import pdb; pdb.set_trace()
 #center1 = theano.shared(np.asarray([-.5, -.5, 4], dtype=theano.config.floatX),
 #                       borrow=True)
 
@@ -86,7 +85,6 @@ def scene(center1, center2):
 if not os.path.exists('output'):
     os.makedirs('output')
 
-import pdb; pdb.set_trace()
 ae = Autoencoder(scene, 32*32, 300, 30, 10)
 opt = MGDAutoOptimizer(ae)
 train_ae, get_grad, get_gradb = opt.optimize(train_data, 0.01)
