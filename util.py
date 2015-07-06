@@ -7,6 +7,22 @@ from matplotlib import pyplot as plt
 from scipy.misc import imsave
 
 
+def initialize_weight(n_vis, n_hid, W_name, numpy_rng, rng_dist):
+
+    if 'uniform' in rng_dist:
+        W = numpy_rng.uniform(low=-np.sqrt(6. / (n_vis + n_hid)),\
+                high=np.sqrt(6. / (n_vis + n_hid)),
+                size=(n_vis, n_hid)).astype(theano.config.floatX)
+        #if 'exp' in rng_dist :
+        #    W = np.exp(-W)
+    elif rng_dist == 'normal':
+        W = 0.01 * numpy_rng.normal(size=(n_vis, n_hid)).astype(theano.config.floatX)
+
+    return theano.shared(value = W, name=W_name)
+
+
+
+
 def broadcasted_switch(a, b, c):
     return T.switch(a.dimshuffle(0, 1, 'x'), b, c)
 

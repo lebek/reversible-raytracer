@@ -1,6 +1,7 @@
 import theano
 import theano.tensor as T
 import numpy as np
+from util import *
 
 class Autoencoder():
 
@@ -12,61 +13,33 @@ class Autoencoder():
         self.n_hidden_l1 = n_hidden_l1
         self.n_hidden_l2 = n_hidden_l2
 
-        vis_to_l1 = np.asarray(
-            np.random.uniform(
-                low=-4 * np.sqrt(6. / (n_visible + n_hidden_l1)),
-                high=4 * np.sqrt(6. / (n_visible + n_hidden_l1)),
-                size=(n_visible, n_hidden_l1)
-            ),
-            dtype=theano.config.floatX
-        )
-
-
-        l1_to_l2 = np.asarray(
-            np.random.uniform(
-                low=-4 * np.sqrt(6. / (n_hidden_l1 + n_hidden_l2)),
-                high=4 * np.sqrt(6. / (n_hidden_l1 + n_hidden_l2)),
-                size=(n_hidden_l1, n_hidden_l2)
-            ),
-            dtype=theano.config.floatX
-        )
-
-
-        l2_to_l3 = np.asarray(
-            np.random.uniform(
-                low=-4 * np.sqrt(6. / (n_hidden_l3 + n_hidden_l2)),
-                high=4 * np.sqrt(6. / (n_hidden_l3 + n_hidden_l2)),
-                size=(n_hidden_l2, n_hidden_l3)
-            ),
-            dtype=theano.config.floatX
-        )
-
         self.l1_biases = theano.shared(np.zeros(n_hidden_l1), borrow=True)
         self.l2_biases = theano.shared(np.zeros(n_hidden_l2), borrow=True)
         self.l3_biases = theano.shared(np.zeros(n_hidden_l3), borrow=True)
 
-        self.vis_to_l1 = theano.shared(vis_to_l1, name="vis_to_l1", borrow=True)
-        self.l1_to_l2 = theano.shared(l1_to_l2, name="l1_to_l2", borrow=True)
-        self.l2_to_l3 = theano.shared(l2_to_l3, name="l2_to_l3", borrow=True)
+        numpy_rng = np.random.RandomState(1234)
+        self.vis_to_l1 = initialize_weight(n_visible, n_hidden_l1, "vis_to_l1", numpy_rng, 'uniform') 
+        self.l1_to_l2 = initialize_weight(n_hidden_l1, n_hidden_l2, "vis_to_l1", numpy_rng, 'uniform')
+        self.l2_to_l3 = initialize_weight(n_hidden_l2, n_hidden_l3, "vis_to_l1", numpy_rng, 'uniform')
 
         self.params0 = [self.vis_to_l1, self.l1_to_l2, self.l2_to_l3,
                        self.l1_biases, self.l2_biases,self.l3_biases]
 
 
         #Adding Capsules
-        self.l3_to_rvar1 = theano.shared(self.init_capsule_param(n_hidden_l3),borrow=True)
-        self.rvar1_biases = theano.shared(np.zeros(3), borrow=True)
+        self.l3_to_rvar1  = theano.shared(self.init_capsule_param(n_hidden_l3),borrow=True)
+        self.rvar1_biases = theano.shared(np.asarray([0,0,2.5]), borrow=True)
 
-        self.l3_to_rvar2 = theano.shared(self.init_capsule_param(n_hidden_l3),borrow=True)
-        self.rvar2_biases = theano.shared(np.zeros(3), borrow=True)
+        #self.l3_to_rvar2  = theano.shared(self.init_capsule_param(n_hidden_l3),borrow=True)
+        #self.rvar2_biases = theano.shared(np.zeros(3), borrow=True)
 
-        self.params1 = [self.l3_to_rvar1,  self.l3_to_rvar2,
-                        self.rvar1_biases, self.rvar2_biases]
+        self.params1 = [self.l3_to_rvar1,  self.rvar1_biases]
+                        #self.l3_to_rvar2, self.rvar2_biases]
         self.params= self.params0+self.params1
 
     def init_capsule_param(self, n_hidden_l3):    
 
-        return np.asarray(
+        return 0.07*np.asarray(
                 np.random.uniform(
                     low=-4 * np.sqrt(6. / 3+n_hidden_l3),
                     high=4 * np.sqrt(6. / 3+n_hidden_l3),
@@ -74,31 +47,30 @@ class Autoencoder():
                 ), dtype=theano.config.floatX)
 
     def get_reconstruct(self,X):
-        robj1, robj2 = self.encoder(X)
-        return self.decoder(robj1, robj2)
+        robj1 = self.encoder(X)
+        return self.decoder(robj1)
 
     def encoder(self, X):
-        #rvar = T.dot(X, self.l2_to_rvar) + self.rvar_biases
-        #rvar = T.set_subtensor(rvar[0], rvar[0].clip(-1,1))
-        #rvar = T.set_subtensor(rvar[1], rvar[1].clip(-1,1))
-        #rvar = T.set_subtensor(rvar[2], rvar[2].clip(3,5))
+
         h1 = T.nnet.sigmoid(T.dot(X, self.vis_to_l1) + self.l1_biases)
         h2 = T.nnet.sigmoid(T.dot(h1, self.l1_to_l2) + self.l2_biases)
         h3 = T.nnet.sigmoid(T.dot(h2, self.l2_to_l3) + self.l3_biases)
         rvar1 = T.dot(h3, self.l3_to_rvar1) + self.rvar1_biases
-        rvar2 = T.dot(h3, self.l3_to_rvar2) + self.rvar2_biases
+        #rvar2 = T.dot(h3, self.l3_to_rvar2) + self.rvar2_biases
 
-        #Assume all objects are withing 20m from the camara
-        rvar1 = T.set_subtensor(rvar1[2], rvar1[2].clip(2.1,5))
-        rvar2 = T.set_subtensor(rvar2[2], rvar2[2].clip(2.1,5))
-        return rvar1,rvar2
+        #Assume all objects are within 20m from the camara
+        #rvar1 = T.set_subtensor(rvar1[2], rvar1[2].clip(2.1,5))
+        #rvar2 = T.set_subtensor(rvar2[2], rvar2[2].clip(2.1,5))
+        return rvar1#,rvar2
 
-    def decoder(self, robj1,robj2):
-        return self.scene(robj1,robj2)
+    def decoder(self, robj1):
+        return self.scene(robj1)
 
     def cost(self,  X):
-        robj1, robj2 = self.encoder(X)
-        reconImage = self.decoder(robj1, robj2)[:,:,0].flatten()
+        #robj1, robj2 = self.encoder(X)
+        robj1 = self.encoder(X)
+        #reconImage = self.decoder(robj1, robj2)[:,:,0].flatten()
+        reconImage = self.decoder(robj1)[:,:,0].flatten()
         return T.sum((X-reconImage)*(X-reconImage))
 
         #Should be this when we have multiple inputs NxD

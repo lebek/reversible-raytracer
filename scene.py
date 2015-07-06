@@ -98,3 +98,4 @@ class Material:
         self.ka = T.as_tensor_variable(ka)
         self.color = T.as_tensor_variable(color)
         self.shininess = T.as_tensor_variable(shininess)
+

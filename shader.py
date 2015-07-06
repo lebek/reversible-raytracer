@@ -50,3 +50,6 @@ class PhongShader(Shader):
         clipped = T.clip(colorized, 0, 1)
         distances = shape.distance(camera.rays)
         return broadcasted_switch(T.isinf(distances), [0., 0., 0.], clipped)
+
+
+

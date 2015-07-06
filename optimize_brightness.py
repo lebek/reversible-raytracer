@@ -40,7 +40,7 @@ image = scene.build()
 render_fn = theano.function([], image, on_unused_input='ignore')
 
 drawWithMarkers('output/0.png', render_fn())
-
+import pdb; pdb.set_trace()
 if OptmizeFlag:
     print 'Building gradient functions'
     train = opt.optimize([center1, center2],
