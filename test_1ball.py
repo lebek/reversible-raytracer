@@ -47,12 +47,16 @@ get_center= theano.function([], ae.encoder(train_data[0]))
 
 center = get_center()
 print '...Initial center1 (%g,%g,%g)' % (center[0], center[1], center[2])
+print recon.sum()
+
+ggg =get_grad()
+gbb =get_gradb()
+import pdb; pdb.set_trace()
+
 n=0;
 while (n<3):
     n+=1
-    ggg =get_grad()
-    gbb =get_gradb()
-    import pdb; pdb.set_trace()
+    
     train_loss  = train_ae()
     center      = get_center()
     print '...Epoch %d Train loss %g, Center (%g, %g, %g)' \

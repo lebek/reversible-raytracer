@@ -73,6 +73,7 @@ class Autoencoder():
         reconImage = self.decoder(robj1)[:,:,0].flatten()
         return T.sum((X-reconImage)*(X-reconImage))
 
+
         #Should be this when we have multiple inputs NxD
         #return T.mean(0.5* T.sum((X-reconImage)*(X-reconImage),axis=1))
 

@@ -55,7 +55,7 @@ class Transform():
 
 def identity():
     """Returns the identity transform"""
-    return Transform(np.eye(4, 4), np.eye(4, 4))
+    return Transform(np.asarray(np.eye(4, 4),dtype=theano.config.floatX) , np.asarray(np.eye(4, 4), dtype=theano.config.floatX))
 
 def translate(x):
     """Returns a transform to represent a translation"""

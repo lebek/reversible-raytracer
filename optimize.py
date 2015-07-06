@@ -126,8 +126,7 @@ class MGDAutoOptimizer:
             update_vars.append((var, var-lr*gvar))
 
         opt = theano.function([], cost, updates=update_vars, givens={X: train_data[0]})
-
-        get_grad = theano.function([] , grads[-2], givens={X:train_data[0]})
+        get_grad  = theano.function([], grads[-2], givens={X:train_data[0]})
         get_gradb = theano.function([], grads[-1], givens={X:train_data[0]})
         return opt, get_grad, get_gradb
 
@@ -167,7 +166,7 @@ class MGDAutoOptimizer:
         opt = theano.function([], cost, updates=updates,
                               givens={X: train_data[0]})
 
-        get_grad = theano.function([], grads[-2], givens={X:train_data[0]})
+        get_grad  = theano.function([], grads[-2], givens={X:train_data[0]})
         get_gradb = theano.function([], grads[-1], givens={X:train_data[0]})
         return opt, get_grad, get_gradb
 

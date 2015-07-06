@@ -21,8 +21,8 @@ class Scene:
         image = T.alloc(0., self.camera.x_dims, self.camera.y_dims, 3)
 
         #Anti-Aliasing
-        sampleDist_x = np.random.random((self.camera.x_dims, self.camera.y_dims,antialias_samples))
-        sampleDist_y = np.random.random((self.camera.x_dims, self.camera.y_dims,antialias_samples))
+        sampleDist_x = np.asarray(np.random.random((self.camera.x_dims, self.camera.y_dims,antialias_samples)),dtype=theano.config.floatX)
+        sampleDist_y = np.asarray(np.random.random((self.camera.x_dims, self.camera.y_dims,antialias_samples)),dtype=theano.config.floatX)
 
         for sample in xrange(antialias_samples): #TODO USE SCAN
 
@@ -65,10 +65,11 @@ class Camera:
 
         rays = np.dstack(np.meshgrid(np.linspace(0.5, -0.5, y_dims),
                          np.linspace(-0.5, 0.5, x_dims), indexing='ij'))
-        rays = np.dstack([rays, np.ones([y_dims, x_dims])])
+        rays = np.dstack([rays, np.ones([y_dims, x_dims], dtype='float32')])
         rays = np.divide(rays, np.linalg.norm(rays, axis=2).reshape(
                                         y_dims, x_dims, 1).repeat(3, 2))
 
+        rays = np.asarray(rays, dtype=theano.config.floatX)
         if sampleDist_x is not None: rays[:,:,0] = rays[:,:,0] + sampleDist_x / x_dims
         if sampleDist_y is not None: rays[:,:,1] = rays[:,:,1] + sampleDist_y / y_dims
         return RayField(T.as_tensor_variable([0., 0., 0.]), T.as_tensor_variable(rays))
