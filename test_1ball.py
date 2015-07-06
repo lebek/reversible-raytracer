@@ -5,7 +5,7 @@ import theano
 from scipy import misc
 
 
-from autoencoder import Autoencoder
+from autoencoder_1obj import Autoencoder
 from transform import *
 from scene import *
 from shader import *
@@ -50,17 +50,15 @@ center = get_center()
 print '...Initial center1 (%g,%g,%g)' % (center[0], center[1], center[2])
 print recon.sum()
 
-ggg =get_grad()
-gbb =get_gradb()
 import pdb; pdb.set_trace()
 
 n=0;
 while (n<num_epoch):
     n+=1
-    ggg =get_grad()
-    gbb =get_gradb()
-    import pdb; pdb.set_trace()
-    train_loss  = train_ae()
+    #ggg =get_grad()
+    #gbb =get_gradb()
+    eps = get_epsilon(epsilon, num_epoch, n)
+    train_loss  = train_ae(eps)
     center      = get_center()
     print '...Epoch %d Train loss %g, Center (%g, %g, %g)' \
                     % (n, train_loss, center[0], center[1], center[2])

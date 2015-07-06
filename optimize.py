@@ -21,7 +21,7 @@ class GDOptimizer:
         Maximize the loss function with learning rate lr.
         """
         updateVars = []
-        lr = T.iscalar('lr')
+        lr = T.fscalar('lr')
         grads = T.grad(loss, tVars)
         for var, gvar in zip(tVars, grads):
             updateVars.append((var, var - lr * gvar))
@@ -79,7 +79,7 @@ class MGDAutoOptimizer:
         #optimize = theano.function([i], cost, updates=updateVars,
         #            given={X:train_data[i*batch_sz:(i+1)*batch_sz]}
 
-        opt = theano.function([], cost, updates=update_vars,
+        opt = theano.function([lr], cost, updates=update_vars,
                               givens={X: train_data[0]})
 
         get_grad = theano.function([], grads[3], givens={X:train_data[0]})
