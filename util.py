@@ -13,12 +13,10 @@ def initialize_weight(n_vis, n_hid, W_name, numpy_rng, rng_dist):
         W = numpy_rng.uniform(low=-np.sqrt(6. / (n_vis + n_hid)),\
                 high=np.sqrt(6. / (n_vis + n_hid)),
                 size=(n_vis, n_hid)).astype(theano.config.floatX)
-        #if 'exp' in rng_dist :
-        #    W = np.exp(-W)
     elif rng_dist == 'normal':
         W = 0.01 * numpy_rng.normal(size=(n_vis, n_hid)).astype(theano.config.floatX)
 
-    return theano.shared(value = W, name=W_name)
+    return theano.shared(value = W, name=W_name, borrow=True)
 
 
 '''decaying learning rate'''
@@ -55,3 +53,4 @@ def drawWithMarkers(fname, im):
 
 def draw(fname, im):
     imsave(fname, im)
+

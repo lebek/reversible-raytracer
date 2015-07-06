@@ -33,7 +33,7 @@ class GDOptimizer:
 
         i = T.iscalar('i'); lr = T.fscalar('lr');
         grads = T.grad(loss, tVars)
-        '''ADAM Code from 
+        '''ADAM Code from
             https://github.com/danfischetti/deep-recurrent-attentive-writer/blob/master/DRAW/adam.py
         '''
         self.m = [theano.shared(name = 'm', \
@@ -41,7 +41,7 @@ class GDOptimizer:
         self.v = [theano.shared(name = 'v', \
         	value = np.zeros(param.get_value().shape,dtype=theano.config.floatX)) for param in model.params]
         self.t = theano.shared(name = 't',value = np.asarray(1).astype(theano.config.floatX))
-        updates = [(self.t,self.t+1)] 
+        updates = [(self.t,self.t+1)]
 
         for param, gparam,m,v in zip(model.params, gparams, self.m, self.v):
 
@@ -50,12 +50,12 @@ class GDOptimizer:
             updates.append((m,m_t))
             v_t = beta2*(gparam**2)+(1-beta2)*v
             updates.append((v,v_t))
-            m_t_bias = m_t/(1-(1-beta1)**self.t)	
+            m_t_bias = m_t/(1-(1-beta1)**self.t)
             v_t_bias = v_t/(1-(1-beta2)**self.t)
             if param.get_value().ndim == 1:
-                updates.append((param,param - 5*lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))		
+                updates.append((param,param - 5*lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))
             else:
-                updates.append((param,param - lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))		
+                updates.append((param,param - lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))
 
         return theano.function([], loss, updates=updates)
 
@@ -76,9 +76,13 @@ class MGDAutoOptimizer:
         for var, gvar in zip(self.ae.params, grads):
             update_vars.append((var, var-lr*gvar))
 
-        opt = theano.function([lr], cost, updates=update_vars, givens={X: train_data[0]})
+        #optimize = theano.function([i], cost, updates=updateVars,
+        #            given={X:train_data[i*batch_sz:(i+1)*batch_sz]}
 
-        get_grad = theano.function([] , grads[-2], givens={X:train_data[0]})
+        opt = theano.function([], cost, updates=update_vars,
+                              givens={X: train_data[0]})
+
+        get_grad = theano.function([], grads[3], givens={X:train_data[0]})
         get_gradb = theano.function([], grads[-1], givens={X:train_data[0]})
         return opt, get_grad, get_gradb
 
@@ -91,7 +95,7 @@ class MGDAutoOptimizer:
         cost = self.ae.cost(X)
         grads = T.grad(cost, self.ae.params)
 
-        '''ADAM Code from 
+        '''ADAM Code from
             https://github.com/danfischetti/deep-recurrent-attentive-writer/blob/master/DRAW/adam.py
         '''
         self.m = [theano.shared(name = 'm', \
@@ -99,7 +103,7 @@ class MGDAutoOptimizer:
         self.v = [theano.shared(name = 'v', \
         	value = np.zeros(param.get_value().shape,dtype=theano.config.floatX)) for param in self.ae.params]
         self.t = theano.shared(name = 't',value = np.asarray(1).astype(theano.config.floatX))
-        updates = [(self.t,self.t+1)] 
+        updates = [(self.t,self.t+1)]
 
         for param, gparam,m,v in zip(self.ae.params, grads, self.m, self.v):
 
@@ -108,17 +112,17 @@ class MGDAutoOptimizer:
             updates.append((m,m_t))
             v_t = beta2*(gparam**2)+(1-beta2)*v
             updates.append((v,v_t))
-            m_t_bias = m_t/(1-(1-beta1)**self.t)	
+            m_t_bias = m_t/(1-(1-beta1)**self.t)
             v_t_bias = v_t/(1-(1-beta2)**self.t)
             if param.get_value().ndim == 1:
-                updates.append((param,param - 5*lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))		
+                updates.append((param,param - 5*lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))
             else:
-                updates.append((param,param - lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))		
+                updates.append((param,param - lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))
 
 
         opt = theano.function([lr], cost, updates=updates, givens={X: train_data[0]})
 
-        get_grad = theano.function([], grads[-2], givens={X:train_data[0]})
+        get_grad  = theano.function([], grads[-2], givens={X:train_data[0]})
         get_gradb = theano.function([], grads[-1], givens={X:train_data[0]})
         return opt, get_grad, get_gradb
 
@@ -127,5 +131,3 @@ class MGDAutoOptimizer:
 
 
 #train_data = [misc.imread('15.png').flatten().astype('float32')/255.0]
-
-

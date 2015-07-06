@@ -1,11 +1,15 @@
 import os
 import numpy as np
 from optimize import GDOptimizer
+from scene import *
+from shader import *
+from shape import *
+from transform import *
 import theano
 from util import *
 
 ### Hyper-parameters ###
-OptmizeFlag=False
+OptmizeFlag=True
 #-----------------------
 
 
@@ -52,3 +56,5 @@ if OptmizeFlag:
         print 'Step', i+1
         print train()
         drawWithMarkers('output/%d.png' % (i+1,), render_fn())
+
+
