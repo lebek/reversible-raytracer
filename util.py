@@ -21,6 +21,9 @@ def initialize_weight(n_vis, n_hid, W_name, numpy_rng, rng_dist):
     return theano.shared(value = W, name=W_name)
 
 
+'''decaying learning rate'''
+def get_epsilon(epsilon, n, i):
+    return float(epsilon / ( 1 + i/float(n)))
 
 
 def broadcasted_switch(a, b, c):
