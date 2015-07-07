@@ -4,7 +4,6 @@ import theano.tensor as T
 import theano
 from scipy import misc
 
-
 from autoencoder_1obj import Autoencoder
 from transform import *
 from scene import *
@@ -35,6 +34,8 @@ def scene(center1):
 
 ae = Autoencoder(scene, D, 300, 30, 10)
 opt = MGDAutoOptimizer(ae)
+import pdb; pdb.set_trace()
+
 
 recon = ae.get_reconstruct(train_data[0])[:,:,0].eval()
 imsave('output/test0.png', recon)
@@ -50,8 +51,6 @@ center = get_center()
 print '...Initial center1 (%g,%g,%g)' % (center[0], center[1], center[2])
 print recon.sum()
 
-import pdb; pdb.set_trace()
-
 n=0;
 while (n<num_epoch):
     n+=1
@@ -65,3 +64,5 @@ while (n<num_epoch):
 
     image = get_recon()
     imsave('output/test%d.png' % (n,), image)
+
+

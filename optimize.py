@@ -76,15 +76,12 @@ class MGDAutoOptimizer:
         for var, gvar in zip(self.ae.params, grads):
             update_vars.append((var, var-lr*gvar))
 
-        #optimize = theano.function([i], cost, updates=updateVars,
-        #            given={X:train_data[i*batch_sz:(i+1)*batch_sz]}
-
         opt = theano.function([lr], cost, updates=update_vars,
                               givens={X: train_data[0]})
 
-        get_grad = theano.function([], grads[3], givens={X:train_data[0]})
-        get_gradb = theano.function([], grads[-1], givens={X:train_data[0]})
-        return opt, get_grad, get_gradb
+        #get_grad = theano.function([], grads[3], givens={X:train_data[0]})
+        #get_gradb = theano.function([], grads[-1], givens={X:train_data[0]})
+        return opt#, get_grad, get_gradb
 
     def optimizeADAM(self, train_data,  \
             beta1 = 0.1,beta2 = 0.001,epsilon = 1e-8, l = 1e-8):
