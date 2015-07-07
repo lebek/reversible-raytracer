@@ -25,8 +25,9 @@ def scene(capsules, obj_params):
     material1 = Material((0.2, 0.9, 0.4), 0.3, 0.7, 0.5, 50.)
     for i in xrange(len(capsules)):
         
-        capsule = capsules[i]
-        t1 = translate(obj_params[i])# * scale(obj_params[3:])
+        capsule     = capsules[i]
+        obj_param   = obj_params[i]
+        t1 = translate(obj_param[:3]) * scale(obj_param[3:])
         if capsule.name == 'sphere':
             shapes.append(Sphere(t1, material1))
         elif capsule.name == 'square':

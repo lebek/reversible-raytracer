@@ -4,7 +4,7 @@ import theano.tensor as T
 import theano
 from scipy import misc
 
-from autoencoder_1obj import Autoencoder
+from autoencoder_1obj import Autoencoder_1obj
 from transform import *
 from scene import *
 from shader import *
@@ -32,7 +32,7 @@ def scene(center1, scale1):
     scene = Scene(shapes, [light], camera, shader)
     return scene.build()
 
-ae = Autoencoder(scene, D, 300, 30, 10)
+ae = Autoencoder_1obj(scene, D, 300, 30, 10)
 opt = MGDAutoOptimizer(ae)
 import pdb; pdb.set_trace()
 

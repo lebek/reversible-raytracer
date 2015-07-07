@@ -29,10 +29,8 @@ class Autoencoder():
 
         #Adding Capsules
         self.capsules = []
-        sphere1 = Capsule('sphere', n_hidden_l3, 3) #3 for center param
+        sphere1 = Capsule('sphere', n_hidden_l3, 6) #3 for center, 3 for scaling 
         self.capsules.append(sphere1)
-        #self.l3_to_rvar1  = theano.shared(self.init_capsule_param(n_hidden_l3),borrow=True)
-        #self.rvar1_biases = theano.shared(np.asarray([0,0,2.5]), borrow=True)
 
         #self.l3_to_rvar2  = theano.shared(self.init_capsule_param(n_hidden_l3),borrow=True)
         #self.rvar2_biases = theano.shared(np.zeros(3), borrow=True)

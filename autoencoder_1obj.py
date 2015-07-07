@@ -3,7 +3,7 @@ import theano.tensor as T
 import numpy as np
 from util import *
 
-class Autoencoder():
+class Autoencoder_1obj():
 
     # each render_var gets its own l2 layer
     def __init__(self, scene, n_visible,
@@ -28,10 +28,7 @@ class Autoencoder():
 
         #Adding Capsules
         self.l3_to_rvar1  = theano.shared(self.init_capsule_param(n_hidden_l3),borrow=True)
-        self.rvar1_biases = theano.shared(np.asarray([0,0,2.5]), borrow=True)
-
-        #self.l3_to_rvar2  = theano.shared(self.init_capsule_param(n_hidden_l3),borrow=True)
-        #self.rvar2_biases = theano.shared(np.zeros(3), borrow=True)
+        self.rvar1_biases = theano.shared(np.asarray([0,0,2.5,1,1,1]), borrow=True)
 
         self.params1 = [self.l3_to_rvar1,  self.rvar1_biases]
                         #self.l3_to_rvar2, self.rvar2_biases]
@@ -41,9 +38,9 @@ class Autoencoder():
 
         return 0.07*np.asarray(
                 np.random.uniform(
-                    low=-4 * np.sqrt(6. / 3+n_hidden_l3),
-                    high=4 * np.sqrt(6. / 3+n_hidden_l3),
-                    size=(n_hidden_l3, 3)
+                    low=-4 * np.sqrt(6. / 6+n_hidden_l3),
+                    high=4 * np.sqrt(6. / 6+n_hidden_l3),
+                    size=(n_hidden_l3, 6)
                 ), dtype=theano.config.floatX)
 
     def get_reconstruct(self,X):
@@ -64,7 +61,7 @@ class Autoencoder():
         return rvar1#,rvar2
 
     def decoder(self, robj1):
-        return self.scene(robj1)
+        return self.scene(robj1[:3], robj1[3:])
 
     def cost(self,  X):
         #robj1, robj2 = self.encoder(X)

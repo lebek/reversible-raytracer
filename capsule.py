@@ -8,7 +8,7 @@ class Capsule():
 
         self.name = name
         self.params = [self.init_capsule_weight(n_hidden, n_output),
-            theano.shared(np.asarray([0,0,2.5], dtype=theano.config.floatX), borrow=True)]
+            theano.shared(np.asarray([0,0,2.5,1,1,1], dtype=theano.config.floatX), borrow=True)]
 
 
     def init_capsule_weight(self, n_hidden_l3, n_output):    
