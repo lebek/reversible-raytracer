@@ -18,7 +18,7 @@ class Autoencoder_1obj():
         self.l3_biases = theano.shared(np.zeros(n_hidden_l3), borrow=True)
 
         numpy_rng = np.random.RandomState(1234)
-        self.vis_to_l1 = initialize_weight(n_visible, n_hidden_l1, "vis_to_l1", numpy_rng, 'uniform') 
+        self.vis_to_l1 = initialize_weight(n_visible, n_hidden_l1, "vis_to_l1", numpy_rng, 'uniform')
         self.l1_to_l2 = initialize_weight(n_hidden_l1, n_hidden_l2, "vis_to_l1", numpy_rng, 'uniform')
         self.l2_to_l3 = initialize_weight(n_hidden_l2, n_hidden_l3, "vis_to_l1", numpy_rng, 'uniform')
 
@@ -34,14 +34,20 @@ class Autoencoder_1obj():
                         #self.l3_to_rvar2, self.rvar2_biases]
         self.params= self.params0+self.params1
 
-    def init_capsule_param(self, n_hidden_l3):    
-
-        return 0.07*np.asarray(
-                np.random.uniform(
-                    low=-4 * np.sqrt(6. / 6+n_hidden_l3),
-                    high=4 * np.sqrt(6. / 6+n_hidden_l3),
-                    size=(n_hidden_l3, 6)
-                ), dtype=theano.config.floatX)
+    def init_capsule_param(self, n_hidden_l3):
+        l3_to_center = 0.07*np.asarray(
+            np.random.uniform(
+                low=-4 * np.sqrt(6. / 6+n_hidden_l3),
+                high=4 * np.sqrt(6. / 6+n_hidden_l3),
+                size=(n_hidden_l3, 3)
+            ), dtype=theano.config.floatX)
+        l3_to_radius = 0.0007*np.asarray(
+            np.random.uniform(
+                low=-4 * np.sqrt(6. / 6+n_hidden_l3),
+                high=4 * np.sqrt(6. / 6+n_hidden_l3),
+                size=(n_hidden_l3, 3)
+            ), dtype=theano.config.floatX)
+        return np.concatenate((l3_to_center, l3_to_radius), 1)
 
     def get_reconstruct(self,X):
         robj1 = self.encoder(X)
@@ -53,12 +59,8 @@ class Autoencoder_1obj():
         h2 = T.nnet.sigmoid(T.dot(h1, self.l1_to_l2) + self.l2_biases)
         h3 = T.nnet.sigmoid(T.dot(h2, self.l2_to_l3) + self.l3_biases)
         rvar1 = T.dot(h3, self.l3_to_rvar1) + self.rvar1_biases
-        #rvar2 = T.dot(h3, self.l3_to_rvar2) + self.rvar2_biases
-
-        #Assume all objects are within 20m from the camara
-        #rvar1 = T.set_subtensor(rvar1[2], rvar1[2].clip(2.1,5))
-        #rvar2 = T.set_subtensor(rvar2[2], rvar2[2].clip(2.1,5))
-        return rvar1#,rvar2
+        rvar1 = T.set_subtensor(rvar1[3:], rvar1[3:].clip(0, np.inf))
+        return rvar1
 
     def decoder(self, robj1):
         return self.scene(robj1[:3], robj1[3:])
@@ -73,4 +75,3 @@ class Autoencoder_1obj():
 
         #Should be this when we have multiple inputs NxD
         #return T.mean(0.5* T.sum((X-reconImage)*(X-reconImage),axis=1))
-

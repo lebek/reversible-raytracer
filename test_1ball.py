@@ -34,7 +34,7 @@ def scene(center1, scale1):
 
 ae = Autoencoder_1obj(scene, D, 300, 30, 10)
 opt = MGDAutoOptimizer(ae)
-import pdb; pdb.set_trace()
+#import pdb; pdb.set_trace()
 
 
 recon = ae.get_reconstruct(train_data[0])[:,:,0].eval()
@@ -66,5 +66,3 @@ while (n<num_epoch):
 
     image = get_recon()
     imsave('output/test%d.png' % (n,), image)
-
-
