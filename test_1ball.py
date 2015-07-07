@@ -43,7 +43,7 @@ imsave('output/test0.png', recon)
 
 epsilon = 0.005
 num_epoch = 100
-train_ae, get_grad, get_gradb = opt.optimize(train_data)
+train_ae = opt.optimize(train_data)
 get_recon = theano.function([], ae.get_reconstruct(train_data[0])[:,:,0])
 get_rvars= theano.function([], ae.encoder(train_data[0]))
 
