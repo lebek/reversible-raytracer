@@ -17,11 +17,11 @@ train_data = np.array([misc.imread('example.png').flatten()], dtype='float32')/2
 N,D = train_data.shape
 img_sz = int(np.sqrt(D))
 
-def scene(center1):
+def scene(center1, scale1):
 
     material1 = Material((0.2, 0.9, 0.4), 0.3, 0.7, 0.5, 50.)
 
-    t1 = translate(center1)
+    t1 = translate(center1) * scale(scale1)
     shapes = [
         Sphere(t1, material1)
     ]
@@ -45,10 +45,11 @@ epsilon = 0.005
 num_epoch = 100
 train_ae, get_grad, get_gradb = opt.optimize(train_data)
 get_recon = theano.function([], ae.get_reconstruct(train_data[0])[:,:,0])
-get_center= theano.function([], ae.encoder(train_data[0]))
+get_rvars= theano.function([], ae.encoder(train_data[0]))
 
-center = get_center()
-print '...Initial center1 (%g,%g,%g)' % (center[0], center[1], center[2])
+rvars = get_rvars()
+print '...Initial center1 (%g,%g,%g) scale1 (%g,%g,%g)' % (
+    rvars[0], rvars[1], rvars[2], rvars[3], rvars[4], rvars[5])
 print recon.sum()
 
 n=0;
@@ -58,9 +59,10 @@ while (n<num_epoch):
     #gbb =get_gradb()
     eps = get_epsilon(epsilon, num_epoch, n)
     train_loss  = train_ae(eps)
-    center      = get_center()
-    print '...Epoch %d Train loss %g, Center (%g, %g, %g)' \
-                    % (n, train_loss, center[0], center[1], center[2])
+    rvars      = get_rvars()
+    print 'Epoch %d Train loss %g, Center (%g, %g, %g) Scale (%g, %g, %g)' \
+        % (n, train_loss, rvars[0], rvars[1], rvars[2],
+           rvars[3], rvars[4], rvars[5])
 
     image = get_recon()
     imsave('output/test%d.png' % (n,), image)

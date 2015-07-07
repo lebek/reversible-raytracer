@@ -24,7 +24,6 @@ class Autoencoder():
         self.W0 = initialize_weight(n_visible  , n_hidden_l1, "W0", numpy_rng, 'uniform') 
         self.W1 = initialize_weight(n_hidden_l1, n_hidden_l2, "W1", numpy_rng, 'uniform')
         self.W2 = initialize_weight(n_hidden_l2, n_hidden_l3, "W2", numpy_rng, 'uniform')
-
         self.params0 = [self.W0, self.W1, self.W2,
                        self.l1_biases, self.l2_biases,self.l3_biases]
 
@@ -48,14 +47,20 @@ class Autoencoder():
             params += self.capsules[i].params
         return params
 
-    def init_capsule_param(self, n_hidden_l3):    
-
-        return 0.07*np.asarray(
-                np.random.uniform(
-                    low=-4 * np.sqrt(6. / 3+n_hidden_l3),
-                    high=4 * np.sqrt(6. / 3+n_hidden_l3),
-                    size=(n_hidden_l3, 3)
-                ), dtype=theano.config.floatX)
+    def init_capsule_param(self, n_hidden_l3):
+        l3_to_center = 0.07*np.asarray(
+            np.random.uniform(
+                low=-4 * np.sqrt(6. / 6+n_hidden_l3),
+                high=4 * np.sqrt(6. / 6+n_hidden_l3),
+                size=(n_hidden_l3, 3)
+            ), dtype=theano.config.floatX)
+        l3_to_radius = 0.0007*np.asarray(
+            np.random.uniform(
+                low=-4 * np.sqrt(6. / 6+n_hidden_l3),
+                high=4 * np.sqrt(6. / 6+n_hidden_l3),
+                size=(n_hidden_l3, 3)
+            ), dtype=theano.config.floatX)
+        return np.concatenate((l3_to_center, l3_to_radius), 1)
 
     def get_reconstruct(self,X):
         robjs = self.encoder(X)
@@ -88,4 +93,3 @@ class Autoencoder():
 
         #Should be this when we have multiple inputs NxD
         #return T.mean(0.5* T.sum((X-reconImage)*(X-reconImage),axis=1))
-
