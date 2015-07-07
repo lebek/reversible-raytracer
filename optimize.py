@@ -80,10 +80,10 @@ class MGDAutoOptimizer:
         #            given={X:train_data[i*batch_sz:(i+1)*batch_sz]}
 
         opt = theano.function([lr], cost, updates=update_vars,
-                              givens={X: train_data[0]})
+                              givens={X: train_data[0]}, allow_input_downcast=True)
 
-        get_grad = theano.function([], grads[3], givens={X:train_data[0]})
-        get_gradb = theano.function([], grads[-1], givens={X:train_data[0]})
+        get_grad = theano.function([], grads[3], givens={X:train_data[0]}, allow_input_downcast=True)
+        get_gradb = theano.function([], grads[-1], givens={X:train_data[0]}, allow_input_downcast=True)
         return opt, get_grad, get_gradb
 
     def optimizeADAM(self, train_data,  \
