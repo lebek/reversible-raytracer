@@ -35,19 +35,14 @@ class Autoencoder_1obj():
         self.params= self.params0+self.params1
 
     def init_capsule_param(self, n_hidden_l3):
-        l3_to_center = 0.07*np.asarray(
-            np.random.uniform(
-                low=-4 * np.sqrt(6. / 6+n_hidden_l3),
-                high=4 * np.sqrt(6. / 6+n_hidden_l3),
-                size=(n_hidden_l3, 3)
-            ), dtype=theano.config.floatX)
-        l3_to_radius = 0.0007*np.asarray(
-            np.random.uniform(
-                low=-4 * np.sqrt(6. / 6+n_hidden_l3),
-                high=4 * np.sqrt(6. / 6+n_hidden_l3),
-                size=(n_hidden_l3, 3)
-            ), dtype=theano.config.floatX)
-        return np.concatenate((l3_to_center, l3_to_radius), 1)
+
+        return 0.07*np.asarray(
+                np.random.uniform(
+                    low=-4 * np.sqrt(6. / 6+n_hidden_l3),
+                    high=4 * np.sqrt(6. / 6+n_hidden_l3),
+                    size=(n_hidden_l3, 6)
+                ), dtype=theano.config.floatX)
+
 
     def get_reconstruct(self,X):
         robj1 = self.encoder(X)
