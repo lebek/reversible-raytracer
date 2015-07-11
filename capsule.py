@@ -4,11 +4,12 @@ import theano.tensor as T
 
 class Capsule():
 
-    def __init__(self, name, n_hidden, n_output):
+    def __init__(self, name, n_hidden, n_output, num_caps):
 
         self.name = name
+        bias = np.asarray([0,0, 3 * num_caps,1,1,1], dtype=theano.config.floatX)/ num_caps
         self.params = [self.init_capsule_weight(n_hidden),
-            theano.shared(np.asarray([0,0,2.5,1,1,1], dtype=theano.config.floatX), borrow=True)]
+            theano.shared(bias, borrow=True)]
 
 
     def init_capsule_weight(self, n_hidden_l3):    

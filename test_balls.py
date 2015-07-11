@@ -13,7 +13,8 @@ from optimize import *
 if not os.path.exists('output'):
     os.makedirs('output')
 
-train_data = np.array([misc.imread('example.png').flatten()], dtype='float32')/255.0
+#train_data = np.array([misc.imread('example.png').flatten()], dtype='float32')/255.0
+train_data = np.array([misc.imread('15.png').flatten()], dtype='float32')/255.0
 N,D = train_data.shape
 img_sz = int(np.sqrt(D))
 
@@ -41,14 +42,14 @@ def scene(capsules, obj_params):
     scene = Scene(shapes, [light], camera, shader)
     return scene.build()
 
-ae = Autoencoder(scene, D, 300, 30, 10)
-opt = MGDAutoOptimizer(ae)
-
-#recon = ae.get_reconstruct(train_data[0])[:,:,0].eval()
-#imsave('output/test_balls0.png', recon)
-
+#Hyper-parameters
+num_capsule = 2
 epsilon = 0.0001
 num_epoch = 200
+
+
+ae = Autoencoder(scene, D, 300, 30, 10, num_capsule)
+opt = MGDAutoOptimizer(ae)
 
 train_ae = opt.optimize(train_data)
 get_recon = theano.function([], ae.get_reconstruct(train_data[0])[:,:,0])

@@ -10,7 +10,7 @@ class Autoencoder():
 
     # each render_var gets its own l2 layer
     def __init__(self, scene, n_visible,
-                 n_hidden_l1, n_hidden_l2, n_hidden_l3):
+                 n_hidden_l1, n_hidden_l2, n_hidden_l3, num_capsule):
         self.scene = scene
         self.n_visible = n_visible
         self.n_hidden_l1 = n_hidden_l1
@@ -29,8 +29,9 @@ class Autoencoder():
 
         #Adding Capsules
         self.capsules = []
-        sphere1 = Capsule('sphere', n_hidden_l3, 6) #3 for center, 3 for scaling 
-        self.capsules.append(sphere1)
+        for i in xrange(num_capsule):
+            sphere = Capsule('sphere', n_hidden_l3, 6, num_capsule) #3 for center, 3 for scaling 
+            self.capsules.append(sphere)
 
         #self.l3_to_rvar2  = theano.shared(self.init_capsule_param(n_hidden_l3),borrow=True)
         #self.rvar2_biases = theano.shared(np.zeros(3), borrow=True)
