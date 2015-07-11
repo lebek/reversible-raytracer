@@ -45,20 +45,6 @@ class Autoencoder():
             params += self.capsules[i].params
         return params
 
-    def init_capsule_param(self, n_hidden_l3):
-        l3_to_center = 0.07*np.asarray(
-            np.random.uniform(
-                low=-4 * np.sqrt(6. / 6+n_hidden_l3),
-                high=4 * np.sqrt(6. / 6+n_hidden_l3),
-                size=(n_hidden_l3, 3)
-            ), dtype=theano.config.floatX)
-        l3_to_radius = 0.0007*np.asarray(
-            np.random.uniform(
-                low=-4 * np.sqrt(6. / 6+n_hidden_l3),
-                high=4 * np.sqrt(6. / 6+n_hidden_l3),
-                size=(n_hidden_l3, 3)
-            ), dtype=theano.config.floatX)
-        return np.concatenate((l3_to_center, l3_to_radius), 1)
 
     def get_reconstruct(self,X):
         robjs = self.encoder(X)
@@ -66,9 +52,9 @@ class Autoencoder():
 
     def encoder(self, X):
 
-        h1 = T.nnet.sigmoid(T.dot(X , self.W0) + self.l1_biases)
-        h2 = T.nnet.sigmoid(T.dot(h1, self.W1) + self.l2_biases)
-        h3 = T.nnet.sigmoid(T.dot(h2, self.W2) + self.l3_biases)
+        h1 = T.tanh(T.dot(X , self.W0) + self.l1_biases)
+        h2 = T.tanh(T.dot(h1, self.W1) + self.l2_biases)
+        h3 = T.nnet.softplus(T.dot(h2, self.W2) + self.l3_biases)
 
         rvars = []
         #TODO For loop needs to be replaced with scan to make it faster

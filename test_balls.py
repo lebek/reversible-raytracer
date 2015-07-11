@@ -47,8 +47,8 @@ opt = MGDAutoOptimizer(ae)
 #recon = ae.get_reconstruct(train_data[0])[:,:,0].eval()
 #imsave('output/test_balls0.png', recon)
 
-epsilon = 0.005
-num_epoch = 300
+epsilon = 0.0001
+num_epoch = 200
 
 train_ae = opt.optimize(train_data)
 get_recon = theano.function([], ae.get_reconstruct(train_data[0])[:,:,0])
@@ -69,8 +69,9 @@ while (n<num_epoch):
     print '...Epoch %d Train loss %g, Center (%g, %g, %g)' \
                     % (n, train_loss, center[0], center[1], center[2])
 
-    image = get_recon()
-    imsave('output/test_balls%d.png' % (n,), image)
+    if n % 10 ==0:
+        image = get_recon()
+        imsave('output/test_balls%d.png' % (n,), image)
 
 
 

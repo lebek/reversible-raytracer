@@ -41,7 +41,7 @@ recon = ae.get_reconstruct(train_data[0])[:,:,0].eval()
 imsave('output/test0.png', recon)
 
 
-epsilon = 0.005
+epsilon = 0.0001
 num_epoch = 100
 train_ae = opt.optimize(train_data)
 get_recon = theano.function([], ae.get_reconstruct(train_data[0])[:,:,0])
@@ -66,3 +66,5 @@ while (n<num_epoch):
 
     image = get_recon()
     imsave('output/test%d.png' % (n,), image)
+
+

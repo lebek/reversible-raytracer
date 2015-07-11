@@ -35,6 +35,11 @@ class Autoencoder_1obj():
         self.params= self.params0+self.params1
 
     def init_capsule_param(self, n_hidden_l3):
+        #return 0.07*np.asarray( np.random.uniform(\
+        #            low=-4 * np.sqrt(6. / 6+n_hidden_l3),
+        #            high=4 * np.sqrt(6. / 6+n_hidden_l3),
+        #            size=(n_hidden_l3, 6)), dtype=theano.config.floatX)
+
         l3_to_center = 0.07*np.asarray(
             np.random.uniform(
                 low=-4 * np.sqrt(6. / 6+n_hidden_l3),
@@ -55,9 +60,9 @@ class Autoencoder_1obj():
 
     def encoder(self, X):
 
-        h1 = T.nnet.sigmoid(T.dot(X, self.vis_to_l1) + self.l1_biases)
-        h2 = T.nnet.sigmoid(T.dot(h1, self.l1_to_l2) + self.l2_biases)
-        h3 = T.nnet.sigmoid(T.dot(h2, self.l2_to_l3) + self.l3_biases)
+        h1 = T.tanh(T.dot(X, self.vis_to_l1) + self.l1_biases)
+        h2 = T.tanh(T.dot(h1, self.l1_to_l2) + self.l2_biases)
+        h3 = T.nnet.softplus(T.dot(h2, self.l2_to_l3) + self.l3_biases)
         rvar1 = T.dot(h3, self.l3_to_rvar1) + self.rvar1_biases
         rvar1 = T.set_subtensor(rvar1[3:], rvar1[3:].clip(0, np.inf))
         return rvar1
