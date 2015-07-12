@@ -22,10 +22,10 @@ img_sz = int(np.sqrt(D))
 def scene(capsules, obj_params):
 
     shapes = []
-    #TODO move the material information to attribute of capsule instance 
+    #TODO move the material information to attribute of capsule instance
     material1 = Material((0.2, 0.9, 0.4), 0.3, 0.7, 0.5, 50.)
     for i in xrange(len(capsules)):
-        
+
         capsule     = capsules[i]
         obj_param   = obj_params[i]
         t1 = translate(obj_param[:3]) * scale(obj_param[3:])
@@ -38,7 +38,7 @@ def scene(capsules, obj_params):
 
     light = Light((-1., -1., 2.), (0.961, 1., 0.87))
     camera = Camera(img_sz, img_sz)
-    shader = PhongShader()
+    shader = DepthMapShader(6.1)
     scene = Scene(shapes, [light], camera, shader)
     return scene.build()
 
@@ -73,9 +73,3 @@ while (n<num_epoch):
     if n % 10 ==0:
         image = get_recon()
         imsave('output/test_balls%d.png' % (n,), image)
-
-
-
-
-
-

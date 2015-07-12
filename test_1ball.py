@@ -28,7 +28,7 @@ def scene(center1, scale1):
 
     light = Light((-1., -1., 2.), (0.961, 1., 0.87))
     camera = Camera(img_sz, img_sz)
-    shader = PhongShader()
+    shader = DepthMapShader(6.1)
     scene = Scene(shapes, [light], camera, shader)
     return scene.build()
 
@@ -66,5 +66,3 @@ while (n<num_epoch):
 
     image = get_recon()
     imsave('output/test%d.png' % (n,), image)
-
-
