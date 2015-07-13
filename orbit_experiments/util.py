@@ -54,3 +54,8 @@ def drawWithMarkers(fname, im):
 def draw(fname, im):
     imsave(fname, im)
 
+
+def good_init_search():
+
+    pass
+
