@@ -9,14 +9,15 @@ class Shader:
 class DepthMapShader(Shader):
 
     def __init__(self, maxDepth):
-        self.maxDepth = maxDepth
+        self.maxDepth = float(maxDepth)
 
     def shade(self, shape, lights, camera):
         distance = shape.distance(camera.rays)
         minv = 0
         maxv = self.maxDepth
         scaled = (distance - minv) / (maxv - minv)
-        return (1 - scaled).dimshuffle(0, 1, 'x') * [1., 1., 1.]
+        return (1 - scaled).dimshuffle(0, 1, 'x') *\
+                        np.asarray([1., 1., 1.], dtype=theano.config.floatX)
 
 
 class PhongShader(Shader):

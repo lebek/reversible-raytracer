@@ -14,7 +14,7 @@ if not os.path.exists('output'):
     os.makedirs('output')
 
 #train_data = np.array([misc.imread('example.png').flatten()], dtype='float32')/255.0
-train_data = np.array([misc.imread('15.png').flatten()], dtype='float32')/255.0
+train_data = np.asarray([misc.imread('15.png').flatten()], dtype='float32')/255.0
 N,D = train_data.shape
 img_sz = int(np.sqrt(D))
 
@@ -38,6 +38,7 @@ def scene(capsules, obj_params):
 
     light = Light((-1., -1., 2.), (0.961, 1., 0.87))
     camera = Camera(img_sz, img_sz)
+    #shader = PhongShader()
     shader = DepthMapShader(6.1)
     scene = Scene(shapes, [light], camera, shader)
     return scene.build()
