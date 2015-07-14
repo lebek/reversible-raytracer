@@ -20,9 +20,9 @@ class Autoencoder():
         self.n_hidden_l1 = n_hidden_l1
         self.n_hidden_l2 = n_hidden_l2
 
-        self.l1_biases = theano.shared(np.zeros(n_hidden_l1), borrow=True)
-        self.l2_biases = theano.shared(np.zeros(n_hidden_l2), borrow=True)
-        self.l3_biases = theano.shared(np.zeros(n_hidden_l3), borrow=True)
+        self.l1_biases = theano.shared(np.zeros(n_hidden_l1, dtype=theano.config.floatX), borrow=True)
+        self.l2_biases = theano.shared(np.zeros(n_hidden_l2, dtype=theano.config.floatX), borrow=True)
+        self.l3_biases = theano.shared(np.zeros(n_hidden_l3, dtype=theano.config.floatX), borrow=True)
 
         numpy_rng = np.random.RandomState(1234)
         self.W0 = initialize_weight(n_visible  , n_hidden_l1, "W0", numpy_rng, 'uniform') 

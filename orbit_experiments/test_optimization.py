@@ -79,6 +79,7 @@ print recon.sum()
 
 n=0;
 while (n<num_epoch):
+
     n+=1
     eps = get_epsilon(epsilon, num_epoch, n)
     train_loss  = train_ae(eps)
@@ -88,7 +89,6 @@ while (n<num_epoch):
 
     #cbias = ae.capsules[0].params[1].get_value()
     #print '...cBias (%g, %g, %g)' % (cbias[0], cbias[1], cbias[2])
-
 
     if n % 2 ==0 or n < 4:
         image = get_recon()

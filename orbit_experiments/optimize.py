@@ -52,10 +52,10 @@ class GDOptimizer:
             updates.append((v,v_t))
             m_t_bias = m_t/(1-(1-beta1)**self.t)
             v_t_bias = v_t/(1-(1-beta2)**self.t)
-            if param.get_value().ndim == 1:
-                updates.append((param,param - lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))
-            else:
-                updates.append((param,param - lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))
+            #if param.get_value().ndim == 1:
+            #    updates.append((param,param - lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))
+            #else:
+            updates.append((param,param - lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))
 
         return theano.function([], loss, updates=updates)
 
@@ -74,7 +74,7 @@ class MGDAutoOptimizer:
         update_vars = []
 
         for var, gvar in zip(self.ae.params, grads):
-            update_vars.append((var, var-lr*gvar))
+            update_vars.append((var, var - lr*gvar))
 
         opt = theano.function([lr], cost, updates=update_vars,
                               givens={X: train_data[0]})#, allow_input_downcast=True)
@@ -113,12 +113,11 @@ class MGDAutoOptimizer:
             v_t_bias = v_t/(1-(1-beta2)**self.t)
             updates.append((param,param - lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))
 
-
         opt = theano.function([lr], cost, updates=updates, givens={X: train_data[0]})
 
-        get_grad  = theano.function([], grads[-2], givens={X:train_data[0]})
-        get_gradb = theano.function([], grads[-1], givens={X:train_data[0]})
-        return opt, get_grad, get_gradb
+        #get_grad  = theano.function([], grads[-2], givens={X:train_data[0]})
+        #get_gradb = theano.function([], grads[-1], givens={X:train_data[0]})
+        return opt#, get_grad, get_gradb
 
 
 
