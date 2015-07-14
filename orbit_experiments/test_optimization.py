@@ -17,8 +17,8 @@ if not os.path.exists('output'):
 #Hyper-parameters
 RGBflag      = True
 num_capsule = 1
-epsilon = 0.0002
-num_epoch = 20
+epsilon = 0.0001
+num_epoch = 300
 
 
 #train_data = np.array([misc.imread('example.png').flatten()], dtype='float32')/255.0
@@ -51,7 +51,7 @@ def scene(capsules, obj_params):
             shapes.append(Light(t1, material1))
 
     shapes.append(Sphere(translate(center2) * scale((1.5, 1.5, 1.5)), material2))
-    light = Light((-1., -1., 2.), (0.961, 1., 0.87))
+    light = Light((-0., -0., 2.), (0.961, 1., 0.87))
     camera = Camera(img_sz, img_sz)
     if RGBflag:
         shader = PhongShader()
@@ -90,7 +90,7 @@ while (n<num_epoch):
     #cbias = ae.capsules[0].params[1].get_value()
     #print '...cBias (%g, %g, %g)' % (cbias[0], cbias[1], cbias[2])
 
-    if n % 2 ==0 or n < 4:
+    if n % 5 ==0 or n < 4:
         image = get_recon()
         imsave('output/test_balls%d.png' % (n,), image)
 
