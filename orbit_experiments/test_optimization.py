@@ -18,9 +18,9 @@ if not os.path.exists('output'):
 RGBflag      = True
 num_capsule  = 1
 epsilon      = 0.000005
-epsilon_adam = 0.001
+epsilon_adam = 0.0001
 num_epoch    = 500
-opt_image    = './orbit_dataset/7.png'
+opt_image    = './orbit_dataset/40.png'
 
 
 #train_data = np.array([misc.imread('example.png').flatten()], dtype='float32')/255.0
@@ -86,9 +86,9 @@ while (n<num_epoch):
     n+=1
     eps = get_epsilon(epsilon, num_epoch, n)
     #train_loss  = train_aeADAM(epsilon_adam)
-    if n < 5:
-        #train_loss  = train_aeADAM(epsilon_adam)
-        train_loss  = train_ae(eps)
+    if n < 3:
+        train_loss  = train_aeADAM(epsilon_adam)
+        #train_loss  = train_ae(eps)
     else:
         train_loss  = train_ae(eps)
 
