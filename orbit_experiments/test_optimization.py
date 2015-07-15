@@ -16,13 +16,15 @@ if not os.path.exists('output'):
 
 #Hyper-parameters
 RGBflag      = True
-num_capsule = 1
-epsilon = 0.0001
-num_epoch = 300
+num_capsule  = 1
+epsilon      = 0.000005
+epsilon_adam = 0.001
+num_epoch    = 500
+opt_image    = './orbit_dataset/7.png'
 
 
 #train_data = np.array([misc.imread('example.png').flatten()], dtype='float32')/255.0
-train_data = np.asarray([misc.imread('1.png').flatten()], dtype='float32')/255.0
+train_data = np.asarray([misc.imread(opt_image).flatten()], dtype='float32')/255.0
 N,D = train_data.shape
 if RGBflag:
     img_sz = int(np.sqrt(D/3))
@@ -51,7 +53,7 @@ def scene(capsules, obj_params):
             shapes.append(Light(t1, material1))
 
     shapes.append(Sphere(translate(center2) * scale((1.5, 1.5, 1.5)), material2))
-    light = Light((-0., -0., 2.), (0.961, 1., 0.87))
+    light = Light((-0., -0., 1), (1., 1., 1.)) # (0.961, 1., 0.87)
     camera = Camera(img_sz, img_sz)
     if RGBflag:
         shader = PhongShader()
@@ -65,6 +67,7 @@ ae = Autoencoder(scene, D, 300, 30, 10, num_capsule)
 opt = MGDAutoOptimizer(ae)
 
 train_ae = opt.optimize(train_data)
+train_aeADAM = opt.optimizeADAM(train_data)
 get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
 get_center= theano.function([], ae.encoder(train_data[0])[0].flatten())
 
@@ -82,15 +85,18 @@ while (n<num_epoch):
 
     n+=1
     eps = get_epsilon(epsilon, num_epoch, n)
-    train_loss  = train_ae(eps)
-    center      = get_center()
-    print '...Epoch %d Train loss %g, Center (%g, %g, %g)' \
-                % (n, train_loss, center[0], center[1], center[2])
+    #train_loss  = train_aeADAM(epsilon_adam)
+    if n < 5:
+        #train_loss  = train_aeADAM(epsilon_adam)
+        train_loss  = train_ae(eps)
+    else:
+        train_loss  = train_ae(eps)
 
-    #cbias = ae.capsules[0].params[1].get_value()
-    #print '...cBias (%g, %g, %g)' % (cbias[0], cbias[1], cbias[2])
+    if n % 20 ==0 or n < 5:
+        center = get_center()
+        print '...Epoch %d Eps %g, Train loss %g, Center (%g, %g, %g)' \
+                % (n, eps, train_loss, center[0], center[1], center[2])
 
-    if n % 5 ==0 or n < 4:
         image = get_recon()
         imsave('output/test_balls%d.png' % (n,), image)
 

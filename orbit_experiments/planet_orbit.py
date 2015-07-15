@@ -31,7 +31,7 @@ shapes = [
     Sphere(translate(center2) * scale((1.5, 1.5, 1.5)), material2)
 ]
 
-light = Light((-1., -1., 2.), (0.961, 1., 0.87))
+light = Light((0., 0., 1.), (1., 1.,  1.))
 camera = Camera(x_dims, y_dims)
 #shader = DepthMapShader(6.1)
 shader = PhongShader()
