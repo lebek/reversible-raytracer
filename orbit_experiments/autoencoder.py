@@ -24,7 +24,7 @@ class Autoencoder():
         self.l2_biases = theano.shared(np.zeros(n_hidden_l2, dtype=theano.config.floatX), borrow=True)
         self.l3_biases = theano.shared(np.zeros(n_hidden_l3, dtype=theano.config.floatX), borrow=True)
 
-        numpy_rng = np.random.RandomState(1234)
+        numpy_rng = np.random.RandomState(123)
         self.W0 = initialize_weight(n_visible  , n_hidden_l1, "W0", numpy_rng, 'uniform') 
         self.W1 = initialize_weight(n_hidden_l1, n_hidden_l2, "W1", numpy_rng, 'uniform')
         self.W2 = initialize_weight(n_hidden_l2, n_hidden_l3, "W2", numpy_rng, 'uniform')
@@ -52,12 +52,12 @@ class Autoencoder():
 
 
     def get_reconstruct(self,X):
-        robjs = self.encoder(X)
+        robjs = self.encoder(X.dimshuffle('x',0))
         return self.decoder(robjs)
 
     def encoder(self, X):
 
-        h1 = (T.dot(X , self.W0) + self.l1_biases)
+        h1 = (T.dot(X, self.W0) + self.l1_biases)
         h2 = T.tanh(T.dot(h1, self.W1) + self.l2_biases)
         h3 = T.nnet.softplus(T.dot(h2, self.W2) + self.l3_biases)
 
@@ -66,8 +66,8 @@ class Autoencoder():
         for item_i in xrange(len(self.capsules)):
             center = T.dot(h3, self.capsules[item_i].params[CWEIGHT]) \
                                     + self.capsules[item_i].params[CBIAS]
-            center = T.set_subtensor(center[2], T.nnet.softplus(center[2]))
-            rvars.append(center) 
+            center = T.set_subtensor(center[:,2], T.nnet.softplus(center[:,2]))
+            rvars.append(center.flatten()) 
             #scale  = T.dot(h3, self.capsules[item_i].params[RWEIGHT]) \
             #                                + self.capsules[item_i].params[RBIAS]
             #rvars.append(T.stacklists([center, scale])) 
@@ -78,7 +78,7 @@ class Autoencoder():
         return self.scene(self.capsules, robjs)
 
     def cost(self,  X):
-        robjs = self.encoder(X)
+        robjs = self.encoder(X.dimshuffle('x',0))
         reconImage = self.decoder(robjs).flatten()
         return T.sum((X-reconImage)*(X-reconImage))
 
