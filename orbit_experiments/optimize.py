@@ -75,7 +75,10 @@ class MGDAutoOptimizer:
         update_vars = []
 
         for var, gvar in zip(self.ae.params, grads):
-            update_vars.append((var, var - lr*gvar))
+            if var.get_value().ndim == 1:
+                update_vars.append((var, var - lr*gvar))
+            else:
+                update_vars.append((var, var - lr*gvar))
 
         opt = theano.function([i, lr], cost, updates=update_vars,
                               givens={X: train_data[i]})#, allow_input_downcast=True)

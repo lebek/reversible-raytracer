@@ -8,7 +8,7 @@ class Capsule():
 
         self.name = name
         #bias = np.asarray([-2,2, 10.5 * num_caps,3.5,3.5,3.5], dtype=theano.config.floatX)/ num_caps
-        cbias = np.asarray([0, 0, 2.4], dtype=theano.config.floatX)/ num_caps
+        cbias = np.asarray([0, 0, 40], dtype=theano.config.floatX)/ num_caps
         #rbias = np.asarray([ 2, 2, 2], dtype=theano.config.floatX)/ num_caps
         self.params = [self.init_capsule_cweight(n_hidden), theano.shared(cbias, borrow=True, name='cbias')]#,\
                        #self.init_capsule_rweight(n_hidden), theano.shared(rbias, borrow=True, name='rbias')]
@@ -16,7 +16,7 @@ class Capsule():
 
     def init_capsule_cweight(self, n_hidden_l3):    
 
-        l3_to_center = 0.005*np.asarray(
+        l3_to_center = 0.1*np.asarray(
             np.random.uniform(
                 low=-4 * np.sqrt(6. / 3+n_hidden_l3),
                 high=4 * np.sqrt(6. / 3+n_hidden_l3),

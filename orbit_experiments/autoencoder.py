@@ -19,6 +19,7 @@ class Autoencoder():
         self.n_visible = n_visible
         self.n_hidden_l1 = n_hidden_l1
         self.n_hidden_l2 = n_hidden_l2
+        self.n_hidden_l3 = n_hidden_l3
 
         self.l1_biases = theano.shared(np.zeros(n_hidden_l1, dtype=theano.config.floatX), borrow=True)
         self.l2_biases = theano.shared(np.zeros(n_hidden_l2, dtype=theano.config.floatX), borrow=True)
@@ -57,8 +58,8 @@ class Autoencoder():
 
     def encoder(self, X):
 
-        h1 = (T.dot(X, self.W0) + self.l1_biases)
-        h2 = T.tanh(T.dot(h1, self.W1) + self.l2_biases)
+        h1 = T.nnet.softplus(T.dot(X , self.W0) + self.l1_biases)
+        h2 = T.nnet.softplus(T.dot(h1, self.W1) + self.l2_biases)
         h3 = T.nnet.softplus(T.dot(h2, self.W2) + self.l3_biases)
 
         rvars = []
@@ -80,7 +81,7 @@ class Autoencoder():
     def cost(self,  X):
         robjs = self.encoder(X.dimshuffle('x',0))
         reconImage = self.decoder(robjs).flatten()
-        return T.sum((X-reconImage)*(X-reconImage))
+        return T.sum((X-reconImage)*(X-reconImage)) #- 0.00001 * T.sum((robjs[0][0] + robjs[0][1])**2)
 
 
         #Should be this when we have multiple inputs NxD

@@ -5,6 +5,7 @@ import theano
 from scipy import misc
 
 from autoencoder import Autoencoder
+from variational_ae import VAE
 from transform import *
 from scene import *
 from shader import *
@@ -16,9 +17,9 @@ def scene(capsules, obj_params):
 
     shapes = []
     #TODO move the material information to attribute of capsule instance
-    material1 = Material((0.2, 0.9, 0.4), 0.3, 0.7, 0.5, 50.)
-    material2 = Material((0.87, 0.1, 0.507), 0.3, 0.9, 0.4, 50.)
-    center2 = theano.shared(np.asarray([0, 0, 8], dtype=theano.config.floatX), borrow=True)
+    material1 = Material((0.87, 0.1, 0.507), 0.3, 0.9, 0.4, 50.)
+    material2 = Material((0.2, 0.9, 0.4), 0.3, 0.7, 0.5, 50.)
+    center2 = theano.shared(np.asarray([0, 0, 128], dtype=theano.config.floatX), borrow=True)
 
     for i in xrange(len(capsules)):
 
@@ -26,13 +27,13 @@ def scene(capsules, obj_params):
         obj_param   = obj_params[i]
         t1 = translate(obj_param) #* scale(obj_param[1,:])
         if capsule.name == 'sphere':
-            shapes.append(Sphere(t1, material1))
+            shapes.append(Sphere(t1 * scale((16, 16, 16)), material1))
         elif capsule.name == 'square':
             shapes.append(Square(t1, material1))
         elif capsule.name == 'light':
             shapes.append(Light(t1, material1))
 
-    shapes.append(Sphere(translate(center2) * scale((1.5, 1.5, 1.5)), material2))
+    shapes.append(Sphere(translate(center2) * scale((24, 24, 24)), material2))
     light = Light((-0., -0., 1), (1., 1., 1.)) # (0.961, 1., 0.87)
     camera = Camera(img_sz, img_sz)
     shader = PhongShader()
@@ -90,24 +91,29 @@ def test_1image(num_capsule  = 1,
     
             image = get_recon()
             imsave('output/one_imgs/test_balls%d.png' % (n,), image)
-   
-def test_2images(num_capsule  = 1,
-               epsilon      = 0.000005,
+  
+
+def test_2images(epsilon,
                epsilon_adam = 0.0001,
-               num_epoch    = 500):
+               num_epoch    = 1000,
+               num_capsule  = 1,
+               ae_type      = 'vae'):
 
     if not os.path.exists('./output/two_imgs'):
         os.makedirs('./output/two_imgs')
 
     data = np.load('orbit_dataset.npz')['arr_0'] / 255.0
     data = data.astype('float32')
-    train_data = data[:2,:,:,:] 
+    train_data = data[7:9,:,:,:] 
     N,D,D,K = train_data.shape
     train_data = theano.shared(train_data.reshape(N, D*D*K))
     global img_sz 
     img_sz = D 
 
-    ae = Autoencoder(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
+    if ae_type == 'vae':
+        ae = VAE(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
+    else:
+        ae = Autoencoder(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
     opt = MGDAutoOptimizer(ae)
     
     train_ae = opt.optimize(train_data)
@@ -130,7 +136,7 @@ def test_2images(num_capsule  = 1,
         for i in xrange(2):
             train_loss += train_ae(i, eps)
     
-        if n % 20 ==0 or n < 5:
+        if n % 40 == 0 or n < 5:
             center = get_center()
             print '...Epoch %d Eps %g, Train loss %g, Center (%g, %g, %g)' \
                     % (n, eps, train_loss, center[0], center[1], center[2])
@@ -147,6 +153,12 @@ if __name__ == '__main__':
     RGBflag = True
 
     #test_1image()
-    test_2images()
 
+
+    ae_type      = 'ae'
+    if ae_type=='vae': #Note: training with VAE doesn't work yet
+        epsilon      = 0.00000001 
+    else:
+        epsilon      = 0.000001
+    test_2images(epsilon, ae_type=ae_type)
 
