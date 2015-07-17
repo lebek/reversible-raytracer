@@ -70,6 +70,7 @@ class MGDAutoOptimizer:
         i  = T.iscalar('i')
         lr = T.fscalar('lr');
         X  = T.fvector('X')
+
         cost = self.ae.cost(X)
         grads = T.grad(cost, self.ae.params)
         update_vars = []

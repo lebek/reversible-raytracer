@@ -1,6 +1,7 @@
 import numpy as np
 import theano
 import theano.tensor as T
+numpy_rng = np.random.RandomState(1234)
 
 class Capsule():
 
@@ -8,7 +9,7 @@ class Capsule():
 
         self.name = name
         #bias = np.asarray([-2,2, 10.5 * num_caps,3.5,3.5,3.5], dtype=theano.config.floatX)/ num_caps
-        cbias = np.asarray([0, 0, 40], dtype=theano.config.floatX)/ num_caps
+        cbias = np.asarray([0, 0, 25], dtype=theano.config.floatX)/ num_caps
         #rbias = np.asarray([ 2, 2, 2], dtype=theano.config.floatX)/ num_caps
         self.params = [self.init_capsule_cweight(n_hidden), theano.shared(cbias, borrow=True, name='cbias')]#,\
                        #self.init_capsule_rweight(n_hidden), theano.shared(rbias, borrow=True, name='rbias')]
@@ -16,12 +17,13 @@ class Capsule():
 
     def init_capsule_cweight(self, n_hidden_l3):    
 
-        l3_to_center = 0.1*np.asarray(
-            np.random.uniform(
-                low=-4 * np.sqrt(6. / 3+n_hidden_l3),
-                high=4 * np.sqrt(6. / 3+n_hidden_l3),
-                size=(n_hidden_l3, 3)
-            ), dtype=theano.config.floatX)
+        l3_to_center = 0.1 * numpy_rng.normal(size=(n_hidden_l3, 3)).astype(theano.config.floatX)
+        #l3_to_center = 0.01*np.asarray(
+        #    np.random.uniform(
+        #        low=-4 * np.sqrt(6. / 3+n_hidden_l3),
+        #        high=4 * np.sqrt(6. / 3+n_hidden_l3),
+        #        size=(n_hidden_l3, 3)
+        #    ), dtype=theano.config.floatX)
 
         return theano.shared(l3_to_center, name='Cweight')
 

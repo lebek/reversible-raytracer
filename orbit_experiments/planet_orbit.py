@@ -18,17 +18,17 @@ if not os.path.exists('orbit_dataset'):
     os.makedirs('orbit_dataset')
 
 
-material1 = Material((0.87, 0.1, 0.507), 0.3, 0.9, 0.4, 50.)
-material2 = Material((0.2, 0.9, 0.4), 0.3, 0.7, 0.5, 50.)
+material1 = Material((0.0, 0.9, 0.0), 0.3, 0.7, 0.5, 50.)
+material2 = Material((0.9, 0.0, 0.0), 0.3, 0.9, 0.4, 50.)
 
-center1 = theano.shared(np.asarray([0, 0, 128], dtype=theano.config.floatX),
+center1 = theano.shared(np.asarray([0, 0, 64], dtype=theano.config.floatX),
                         borrow=True)
-center2 = theano.shared(np.asarray([0, 0, 128], dtype=theano.config.floatX),
+center2 = theano.shared(np.asarray([0, 0, 64], dtype=theano.config.floatX),
                         borrow=True)
 
 shapes = [
-    Sphere(translate(center1) * scale((16, 16, 16)), material1),
-    Sphere(translate(center2) * scale((24, 24, 24)), material2)
+    Sphere(translate(center1) * scale((8, 8, 8)), material1),
+    Sphere(translate(center2) * scale((12, 12, 12)), material2)
 ]
 
 light = Light((0., 0., 1.), (1., 1.,  1.))
@@ -43,11 +43,11 @@ render_fn = theano.function([], image, on_unused_input='ignore')
 def random_orbit_position(v):
    
     x=1;y=1;
-    z = 128
+    z = 64
     x = (1 if rand() > 0.5 else -1) * rand()
     y = (1 if rand() > 0.5 else -1) * np.sqrt(1.0 - x**2) 
-    x = x * 3 *16  
-    y = y * 3 *16 
+    x = x * 3 * 8  
+    y = y * 3 * 8 
     v.set_value(np.asarray([x, y, z], dtype=theano.config.floatX))
     return (x,y,z)
 

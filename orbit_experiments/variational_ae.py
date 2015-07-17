@@ -70,8 +70,8 @@ class VAE():
 
     def encoder_pre(self, X):
 
-        h1 = T.tanh(T.dot(X, self.W0) + self.l1_biases)
-        h2 = T.tanh(T.dot(h1, self.W1) + self.l2_biases)
+        h1 = T.nnet.softplus(T.dot(X, self.W0) + self.l1_biases)
+        h2 = T.nnet.softplus(T.dot(h1, self.W1) + self.l2_biases)
         h3 = T.nnet.softplus(T.dot(h2, self.W2) + self.l3_biases)
         return h3
 
