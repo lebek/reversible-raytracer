@@ -5,7 +5,7 @@ import theano
 from scipy import misc
 
 from linear_encoder import LinEncoder
-from autoencoder import Autoencoder
+from autoencoder_2ly import Autoencoder
 from variational_ae import VAE
 from transform import *
 from scene import *
@@ -20,7 +20,7 @@ def scene(capsules, obj_params):
     #TODO move the material information to attribute of capsule instance
     material1 = Material((0.0, 0.9, 0.0), 0.3, 0.7, 0.5, 50.)
     material2 = Material((0.9, 0.0, 0.0), 0.3, 0.9, 0.4, 50.)
-    center2 = theano.shared(np.asarray([0, 0, 64], dtype=theano.config.floatX), borrow=True)
+    center2 = theano.shared(np.asarray([0, 0, 32], dtype=theano.config.floatX), borrow=True)
 
     for i in xrange(len(capsules)):
 
@@ -28,13 +28,13 @@ def scene(capsules, obj_params):
         obj_param   = obj_params[i]
         t1 = translate(obj_param) #* scale(obj_param[1,:])
         if capsule.name == 'sphere':
-            shapes.append(Sphere(t1 * scale((8, 8, 8)), material1))
+            shapes.append(Sphere(t1 * scale((4, 4, 4)), material1))
         elif capsule.name == 'square':
             shapes.append(Square(t1, material1))
         elif capsule.name == 'light':
             shapes.append(Light(t1, material1))
 
-    shapes.append(Sphere(translate(center2) * scale((12, 12, 12)), material2))
+    shapes.append(Sphere(translate(center2) * scale((6, 6, 6)), material2))
     light = Light((-0., -0., 1), (1., 1., 1.)) # (0.961, 1., 0.87)
     camera = Camera(img_sz, img_sz)
     shader = PhongShader()
@@ -45,9 +45,9 @@ def scene(capsules, obj_params):
 
 
 def test_1image(num_capsule  = 1,
-                epsilon      = 0.00005,
+                epsilon      = 0.00001,
                 epsilon_adam = 0.0001,
-                num_epoch    = 6000,
+                num_epoch    = 5000,
                 opt_image    = './orbit_dataset/40.png'):
 
     if not os.path.exists('./output/one_imgs'):
@@ -155,7 +155,7 @@ if __name__ == '__main__':
 
     global RGBflag
     RGBflag = True
-    A = 1
+    A = 0
 
     if A:
         test_1image()
@@ -164,7 +164,7 @@ if __name__ == '__main__':
         if ae_type=='vae': #Note: training with VAE doesn't work yet
             epsilon      = 0.0000001 
         elif ae_type=='lae':
-            epsilon      = 0.000002
+            epsilon      = 0.00002
         else:
             epsilon      = 0.000001
         test_2images(epsilon, ae_type=ae_type)

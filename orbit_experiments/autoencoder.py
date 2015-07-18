@@ -60,13 +60,13 @@ class Autoencoder():
 
         h1 = (T.dot(X , self.W0) + self.l1_biases)
         h2 = T.tanh(T.dot(h1, self.W1) + self.l2_biases)
-        h3 = T.nnet.softplus(T.dot(h2, self.W2) + self.l3_biases)
+        h3 = T.tanh(T.dot(h2, self.W2) + self.l3_biases)
 
         rvars = []
         #TODO For loop needs to be replaced with scan to make it faster
         for item_i in xrange(len(self.capsules)):
             center = T.dot(h3, self.capsules[item_i].params[CWEIGHT]) \
-                                    + self.capsules[item_i].params[CBIAS]
+                                    + self.capsules[item_i].cbias
             center = T.set_subtensor(center[:,2], T.nnet.softplus(center[:,2]))
             rvars.append(center.flatten()) 
             #scale  = T.dot(h3, self.capsules[item_i].params[RWEIGHT]) \
