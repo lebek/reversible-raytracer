@@ -10,11 +10,11 @@ CBIAS  =1
 RWEIGHT=2
 RBIAS  =3
 
-class Autoencoder():
+class Autoencoder2ly():
 
     # each render_var gets its own l2 layer
     def __init__(self, scene, n_visible,
-                 n_hidden_l1, n_hidden_l2, n_hidden_l3, num_capsule):
+                 n_hidden_l1, n_hidden_l2, num_capsule):
         self.scene = scene
         self.n_visible = n_visible
         self.n_hidden_l1 = n_hidden_l1
@@ -27,16 +27,13 @@ class Autoencoder():
         self.W0 = initialize_weight(n_visible  , n_hidden_l1, "W0", numpy_rng, 'uniform') 
         self.W1 = initialize_weight(n_hidden_l1, n_hidden_l2, "W1", numpy_rng, 'uniform')
 
-        self.params0 = [self.W0, self.W1, self.l1_biases, self.l2_biases]
+        self.params0 = [self.W0, self.W1, self.l1_biases]#, self.l2_biases]
 
         #Adding Capsules
         self.capsules = []
         for i in xrange(num_capsule):
-            sphere = Capsule('sphere', n_hidden_l3, 6, num_capsule) #3 for center, 3 for scaling 
+            sphere = Capsule('sphere', n_hidden_l2, 6, num_capsule) #3 for center, 3 for scaling 
             self.capsules.append(sphere)
-
-        #self.l3_to_rvar2  = theano.shared(self.init_capsule_param(n_hidden_l3),borrow=True)
-        #self.rvar2_biases = theano.shared(np.zeros(3), borrow=True)
 
         self.capsule_params = self._get_capsule_params()
         self.params= self.params0+self.capsule_params
@@ -55,10 +52,9 @@ class Autoencoder():
 
     def encoder(self, X):
 
-        h1 = (T.dot(X , self.W0) + self.l1_biases)
-        #h1 = T.switch(h1<0, 0., h1)
-        h2 = (T.dot(h1, self.W1) + self.l2_biases)
-        h2 = T.switch(h2<0, 0., h2)
+        h1 = T.tanh(T.dot(X , self.W0) + self.l1_biases)
+        h2 = T.tanh(T.dot(h1, self.W1) + self.l2_biases)
+        #h2 = T.switch(h2<0, 0., h2)
 
         rvars = []
         #TODO For loop needs to be replaced with scan to make it faster

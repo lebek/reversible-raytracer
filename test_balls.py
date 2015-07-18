@@ -74,3 +74,5 @@ while (n<num_epoch):
     if n % 10 ==0:
         image = get_recon()
         imsave('output/test_balls%d.png' % (n,), image)
+
+

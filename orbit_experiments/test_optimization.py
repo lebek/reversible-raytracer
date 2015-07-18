@@ -5,7 +5,7 @@ import theano
 from scipy import misc
 
 from linear_encoder import LinEncoder
-from autoencoder_2ly import Autoencoder
+from autoencoder_2ly import Autoencoder2ly
 from variational_ae import VAE
 from transform import *
 from scene import *
@@ -106,14 +106,14 @@ def test_2images(epsilon,
 
     data = np.load('orbit_dataset.npz')['arr_0'] / 255.0
     data = data.astype('float32')
-    train_data = data[7:9,:,:,:] 
+    train_data = data[0:2,:,:,:] 
     N,D,D,K = train_data.shape
     train_data = theano.shared(train_data.reshape(N, D*D*K))
     global img_sz 
     img_sz = D 
 
     #ae = LinEncoder(scene, img_sz*img_sz*3, 300,  num_capsule)
-    ae = Autoencoder(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
+    ae = Autoencoder2ly(scene, img_sz*img_sz*3, 300, 10, num_capsule)
     #if ae_type == 'vae':
     #    ae = VAE(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
     #else:
@@ -166,6 +166,6 @@ if __name__ == '__main__':
         elif ae_type=='lae':
             epsilon      = 0.00002
         else:
-            epsilon      = 0.000001
+            epsilon      = 0.0000002
         test_2images(epsilon, ae_type=ae_type)
     
