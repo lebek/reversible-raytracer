@@ -52,14 +52,15 @@ class LinEncoder():
 
     def encoder(self, X):
 
-        h1 = (T.dot(X , self.W0) + self.l1_biases)
+        h1 = T.tanh(T.dot(X , self.W0) + self.l1_biases)
 
         rvars = []
         #TODO For loop needs to be replaced with scan to make it faster
         for item_i in xrange(len(self.capsules)):
             center = T.dot(h1, self.capsules[item_i].params[CWEIGHT]) \
-                                    + self.capsules[item_i].params[CBIAS]
-            center = T.set_subtensor(center[:,2], T.nnet.softplus(center[:,2]))
+                                    + self.capsules[item_i].cbias
+            #center = T.set_subtensor(center[:,2], T.nnet.softplus(center[:,2]))
+            center = T.set_subtensor(center[:,2], T.switch(center[:,2]<0, 0, center[:,2]))
             rvars.append(center.flatten()) 
 
         return rvars

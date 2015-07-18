@@ -42,10 +42,10 @@ class PhongShader(Shader):
         # specular
         rm = 2.0*(T.tensordot(normals, -light.normed_dir(), 1).dimshuffle(
             0, 1, 'x'))*normals + light.normed_dir()
-        specular_shadings = material.ks*(T.tensordot(rm, camera.look_at, 1) ** material.shininess)
+        #specular_shadings = material.ks*(T.tensordot(rm, camera.look_at, 1) ** material.shininess)
 
         # phong
-        phong_shadings = ambient_light + diffuse_shadings + specular_shadings
+        phong_shadings = ambient_light + diffuse_shadings# + specular_shadings
 
         colorized = phong_shadings.dimshuffle(0, 1, 'x') * material.color.dimshuffle('x', 'x', 0) * light.intensity.dimshuffle('x', 'x', 0)
         clipped = T.clip(colorized, 0, 1)

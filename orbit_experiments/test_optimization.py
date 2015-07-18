@@ -45,9 +45,9 @@ def scene(capsules, obj_params):
 
 
 def test_1image(num_capsule  = 1,
-                epsilon      = 0.000001 ,
+                epsilon      = 0.00005,
                 epsilon_adam = 0.0001,
-                num_epoch    = 1000,
+                num_epoch    = 6000,
                 opt_image    = './orbit_dataset/40.png'):
 
     if not os.path.exists('./output/one_imgs'):
@@ -86,7 +86,7 @@ def test_1image(num_capsule  = 1,
         eps = get_epsilon(epsilon, num_epoch, n)
         train_loss  = train_ae(0, eps)
     
-        if n % 20 ==0 or n < 5:
+        if n % 50 ==0 or n < 5:
             center = get_center()
             print '...Epoch %d Eps %g, Train loss %g, Center (%g, %g, %g)' \
                     % (n, eps, train_loss, center[0], center[1], center[2])
@@ -97,7 +97,7 @@ def test_1image(num_capsule  = 1,
 
 def test_2images(epsilon,
                epsilon_adam = 0.0001,
-               num_epoch    = 1000,
+               num_epoch    = 6000,
                num_capsule  = 1,
                ae_type      = 'vae'):
 
@@ -112,7 +112,8 @@ def test_2images(epsilon,
     global img_sz 
     img_sz = D 
 
-    ae = LinEncoder(scene, img_sz*img_sz*3, 300,  num_capsule)
+    #ae = LinEncoder(scene, img_sz*img_sz*3, 300,  num_capsule)
+    ae = Autoencoder(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
     #if ae_type == 'vae':
     #    ae = VAE(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
     #else:
@@ -139,7 +140,7 @@ def test_2images(epsilon,
         for i in xrange(2):
             train_loss += train_ae(i, eps)
     
-        if n % 40 == 0 or n < 5:
+        if n % 100 == 0 or n < 5:
             center = get_center()
             print '...Epoch %d Eps %g, Train loss %g, Center (%g, %g, %g)' \
                     % (n, eps, train_loss, center[0], center[1], center[2])
@@ -154,16 +155,17 @@ if __name__ == '__main__':
 
     global RGBflag
     RGBflag = True
+    A = 1
 
-    test_1image()
-
+    if A:
+        test_1image()
+    else: 
+        ae_type      = 'lae'
+        if ae_type=='vae': #Note: training with VAE doesn't work yet
+            epsilon      = 0.0000001 
+        elif ae_type=='lae':
+            epsilon      = 0.000002
+        else:
+            epsilon      = 0.000001
+        test_2images(epsilon, ae_type=ae_type)
     
-    #ae_type      = 'lae'
-    #if ae_type=='vae': #Note: training with VAE doesn't work yet
-    #    epsilon      = 0.00000001 
-    #elif ae_type=='lae':
-    #    epsilon      = 0.000002
-    #else:
-    #    epsilon      = 0.000001
-    #test_2images(epsilon, ae_type=ae_type)
-

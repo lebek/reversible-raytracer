@@ -27,8 +27,8 @@ center2 = theano.shared(np.asarray([0, 0, 64], dtype=theano.config.floatX),
                         borrow=True)
 
 shapes = [
-    Sphere(translate(center1) * scale((8, 8, 8)), material1),
-    Sphere(translate(center2) * scale((12, 12, 12)), material2)
+    Sphere(translate(center1) * scale((9, 9, 9)), material1),
+    Sphere(translate(center2) * scale((11, 11, 11)), material2)
 ]
 
 light = Light((0., 0., 1.), (1., 1.,  1.))
@@ -46,8 +46,8 @@ def random_orbit_position(v):
     z = 64
     x = (1 if rand() > 0.5 else -1) * rand()
     y = (1 if rand() > 0.5 else -1) * np.sqrt(1.0 - x**2) 
-    x = x * 3 * 8  
-    y = y * 3 * 8 
+    x = x * 3 * 9  
+    y = y * 3 * 9 
     v.set_value(np.asarray([x, y, z], dtype=theano.config.floatX))
     return (x,y,z)
 
