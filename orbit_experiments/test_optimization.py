@@ -113,7 +113,7 @@ def test_2images(epsilon,
     img_sz = D 
 
     #ae = LinEncoder(scene, img_sz*img_sz*3, 300,  num_capsule)
-    ae = Autoencoder2ly(scene, img_sz*img_sz*3, 300, 10, num_capsule)
+    ae = Autoencoder2ly(scene, img_sz*img_sz*3, 600, 30, num_capsule)
     #if ae_type == 'vae':
     #    ae = VAE(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
     #else:

@@ -77,7 +77,7 @@ class MGDAutoOptimizer:
 
         for var, gvar in zip(self.ae.params, grads):
             if var.get_value().ndim == 1:
-                update_vars.append((var, var - 0.25*lr*gvar))
+                update_vars.append((var, var - 0.1*lr*gvar))
             else:
                 update_vars.append((var, var - lr*gvar))
 
