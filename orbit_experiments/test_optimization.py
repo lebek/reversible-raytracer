@@ -166,3 +166,4 @@ if __name__ == '__main__':
         else:
             epsilon      = 0.0000002
         test_2images(epsilon, ae_type=ae_type)
+
