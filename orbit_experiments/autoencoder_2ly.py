@@ -24,15 +24,15 @@ class Autoencoder2ly():
         self.l2_biases = theano.shared(np.zeros(n_hidden_l2, dtype=theano.config.floatX), borrow=True)
 
         numpy_rng = np.random.RandomState(123)
-        self.W0 = initialize_weight(n_visible  , n_hidden_l1, "W0", numpy_rng, 'uniform') 
+        self.W0 = initialize_weight(n_visible  , n_hidden_l1, "W0", numpy_rng, 'uniform')
         self.W1 = initialize_weight(n_hidden_l1, n_hidden_l2, "W1", numpy_rng, 'uniform')
 
-        self.params0 = [self.W0, self.W1, self.l1_biases]#, self.l2_biases]
+        self.params0 = [self.W0, self.W1, self.l1_biases, self.l2_biases]
 
         #Adding Capsules
         self.capsules = []
         for i in xrange(num_capsule):
-            sphere = Capsule('sphere', n_hidden_l2, 6, num_capsule) #3 for center, 3 for scaling 
+            sphere = Capsule('sphere', n_hidden_l2, 6, num_capsule) #3 for center, 3 for scaling
             self.capsules.append(sphere)
 
         self.capsule_params = self._get_capsule_params()
@@ -63,10 +63,10 @@ class Autoencoder2ly():
                                     + self.capsules[item_i].cbias
             #center = T.set_subtensor(center[:,2], T.nnet.softplus(center[:,2]))
             center = T.set_subtensor(center[:,2], T.switch(center[:,2]<0, 0, center[:,2]))
-            rvars.append(center.flatten()) 
+            rvars.append(center.flatten())
             #scale  = T.dot(h3, self.capsules[item_i].params[RWEIGHT]) \
             #                                + self.capsules[item_i].params[RBIAS]
-            #rvars.append(T.stacklists([center, scale])) 
+            #rvars.append(T.stacklists([center, scale]))
 
         return rvars
 

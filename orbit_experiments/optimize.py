@@ -8,6 +8,8 @@ from transform import *
 from scene import *
 from shader import *
 
+from theano.tensor.shared_randomstreams import RandomStreams
+
 class GDOptimizer:
     """
     Gradient Descent optimizer
@@ -66,13 +68,15 @@ class MGDAutoOptimizer:
         self.ae = ae
 
     def optimize(self, train_data):
-    
         i  = T.iscalar('i')
+        j  = T.iscalar('j')
         lr = T.fscalar('lr');
-        X  = T.fvector('X')
+        X  = T.fmatrix('X')
 
-        cost = self.ae.cost(X)
+        # Only works for 2 training images
+        cost = (self.ae.cost(X[0])+self.ae.cost(X[1]))/2
         grads = T.grad(cost, self.ae.params)
+
         update_vars = []
 
         for var, gvar in zip(self.ae.params, grads):
@@ -81,8 +85,8 @@ class MGDAutoOptimizer:
             else:
                 update_vars.append((var, var - lr*gvar))
 
-        opt = theano.function([i, lr], cost, updates=update_vars,
-                              givens={X: train_data[i]})#, allow_input_downcast=True)
+        opt = theano.function([i, j, lr], cost, updates=update_vars,
+                              givens={X: train_data[i:j]})#, allow_input_downcast=True)
 
         #get_grad = theano.function([], grads[3], givens={X:train_data[0]}, allow_input_downcast=True)
         #get_gradb = theano.function([], grads[-1], givens={X:train_data[0]}, allow_input_downcast=True)
