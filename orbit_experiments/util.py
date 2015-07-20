@@ -19,6 +19,28 @@ def initialize_weight(n_vis, n_hid, W_name, numpy_rng, rng_dist):
     return theano.shared(value = W, name=W_name, borrow=True)
 
 
+def initalize_conv_weight(filter_shape, poolsize, numpy_rng):
+
+    # there are "num input feature maps * filter height * filter width"
+    # inputs to each hidden unit
+    fan_in = np.prod(filter_shape[1:])
+    # each unit in the lower layer receives a gradient from:
+    # "num output feature maps * filter height * filter width" /
+    #   pooling size
+    fan_out = (filter_shape[0] * np.prod(filter_shape[2:]) /
+               np.prod(poolsize))
+    # initialize weights with random weights
+    W_bound = np.sqrt(6. / (fan_in + fan_out))
+    W = theano.shared(
+        np.asarray(
+            numpy_rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
+            dtype=theano.config.floatX
+        ),
+        borrow=True
+    )
+
+    return W
+
 '''decaying learning rate'''
 def get_epsilon(epsilon, n, i):
     return float(epsilon / ( 1 + i/float(n)))
