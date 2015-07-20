@@ -65,19 +65,26 @@ class MGDAutoOptimizer:
     def __init__(self, ae):
         self.ae = ae
 
-    def optimize(self, train_data):
+    def optimize(self, train_data, lam, fixed_length=3):
     
         i  = T.iscalar('i')
         lr = T.fscalar('lr');
         X  = T.fvector('X')
 
-        cost = self.ae.cost(X)
+        cost = self.ae.cost(X)  + lam * self.ae.penalty()
         grads = T.grad(cost, self.ae.params)
         update_vars = []
 
         for var, gvar in zip(self.ae.params, grads):
             if var.get_value().ndim == 1:
                 update_vars.append((var, var - 0.1*lr*gvar))
+            elif var.get_value().ndim > 1:
+                new_param = var - lr*gvar
+                len_W = T.sqrt(T.sum(new_param**2, axis=0))
+                desired_W = T.clip(len_W, 0., fixed_length)
+                ratio = desired_W  / (len_W + 1e-7)
+                new_param = new_param * ratio
+                update_vars.append((var, new_param))
             else:
                 update_vars.append((var, var - lr*gvar))
 
@@ -128,4 +135,4 @@ class MGDAutoOptimizer:
 
 
 
-#train_data = [misc.imread('15.png').flatten().astype('float32')/255.0]
+
