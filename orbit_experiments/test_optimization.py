@@ -5,7 +5,8 @@ import theano
 from scipy import misc
 
 from linear_encoder import LinEncoder
-from autoencoder_2ly import Autoencoder2ly
+#from autoencoder_2ly import Autoencoder2ly
+from autoencoder import Autoencoder
 from variational_ae import VAE
 from transform import *
 from scene import *
@@ -41,7 +42,7 @@ def scene(capsules, obj_params):
     #shader = DepthMapShader()
 
     scene = Scene(shapes, [light], camera, shader)
-    return scene.build()
+    return [scene, scene.build()]
 
 
 def test_1image(num_capsule  = 1,
@@ -66,7 +67,6 @@ def test_1image(num_capsule  = 1,
     ae = LinEncoder(scene, D, 300,  num_capsule)
     #ae = Autoencoder(scene, D, 300, 30, 10, num_capsule)
     opt = MGDAutoOptimizer(ae)
-
     train_ae = opt.optimize(train_data)
     train_aeADAM = opt.optimizeADAM(train_data)
     get_recon = theano.function([], ae.get_reconstruct(train_data[0]))
@@ -98,6 +98,7 @@ def test_1image(num_capsule  = 1,
 def test_2images(epsilon,
                epsilon_adam = 0.0001,
                num_epoch    = 6000,
+               lam          = 0.5,
                num_capsule  = 1,
                ae_type      = 'vae'):
 
@@ -113,24 +114,29 @@ def test_2images(epsilon,
     img_sz = D
 
     #ae = LinEncoder(scene, img_sz*img_sz*3, 300,  num_capsule)
-    ae = Autoencoder2ly(scene, img_sz*img_sz*3, 600, 30, num_capsule)
+    #ae = Autoencoder2ly(scene, img_sz*img_sz*3, 500, 30, num_capsule)
+    ae = Autoencoder(scene, img_sz*img_sz*3, 5000, 500, 30, num_capsule)
     #if ae_type == 'vae':
     #    ae = VAE(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
     #else:
     #    ae = Autoencoder(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
+
+
     opt = MGDAutoOptimizer(ae)
 
-    train_ae = opt.optimize(train_data)
-    train_aeADAM = opt.optimizeADAM(train_data)
+    train_ae = opt.optimize(train_data, lam)
+    #train_aeADAM = opt.optimizeADAM(train_data, lam)
 
     get_recon1 = theano.function([], ae.get_reconstruct(train_data[0]))
     get_recon2 = theano.function([], ae.get_reconstruct(train_data[1]))
-    get_center= theano.function([], ae.encoder(train_data[0].dimshuffle('x',0))[0].flatten())
+    get_center1= theano.function([], ae.encoder(train_data[0].dimshuffle('x',0))[0].flatten())
+    get_center2= theano.function([], ae.encoder(train_data[1].dimshuffle('x',0))[0].flatten())
 
-    center = get_center()
+    center = get_center1()
     imsave('output/two_imgs/1_test_balls0.png', get_recon1())
     imsave('output/two_imgs/2_test_balls0.png', get_recon2())
     print '...Initial center1 (%g,%g,%g)' % (center[0], center[1], center[2])
+    print '...pen %g ' % ae.penality().eval()
 
     n=0;
     while (n<num_epoch):
@@ -139,9 +145,10 @@ def test_2images(epsilon,
         train_loss = train_ae(0, 2, eps)
 
         if n % 100 == 0 or n < 5:
-            center = get_center()
-            print '...Epoch %d Eps %g, Train loss %g, Center (%g, %g, %g)' \
-                    % (n, eps, train_loss, center[0], center[1], center[2])
+            center1 = get_center1()
+            center2 = get_center2()
+            print '...Epoch %d Eps %g, Train loss %g, Center (%g, %g, %g),  Center (%g, %g, %g)' \
+                    % (n, eps, train_loss, center1[0], center1[1], center1[2], center2[0], center2[1], center2[2])
 
             imsave('output/two_imgs/1_test_balls%d.png' % (n,), get_recon1())
             imsave('output/two_imgs/2_test_balls%d.png' % (n,), get_recon2())
@@ -164,6 +171,7 @@ if __name__ == '__main__':
         elif ae_type=='lae':
             epsilon      = 0.00002
         else:
-            epsilon      = 0.0000002
+            epsilon      = 0.000001
         test_2images(epsilon, ae_type=ae_type)
+
 

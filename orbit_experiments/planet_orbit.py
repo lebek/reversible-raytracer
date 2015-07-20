@@ -8,8 +8,8 @@ import theano
 from util import *
 
 n = 100
-x_dims = 64
-y_dims = 64
+x_dims = 32
+y_dims = 32
 
 # Generates n x_dims-by-y_dims image samples containing 2 spheres with
 # randomly assigned centers. Saves the result in dataset.npz

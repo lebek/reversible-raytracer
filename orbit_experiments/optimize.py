@@ -67,14 +67,14 @@ class MGDAutoOptimizer:
     def __init__(self, ae):
         self.ae = ae
 
-    def optimize(self, train_data):
+    def optimize(self, train_data, lam):
         i  = T.iscalar('i')
         j  = T.iscalar('j')
         lr = T.fscalar('lr');
         X  = T.fmatrix('X')
 
         # Only works for 2 training images
-        cost = (self.ae.cost(X[0])+self.ae.cost(X[1]))/2
+        cost = (self.ae.cost(X[0])+self.ae.cost(X[1]))/2 + lam * self.ae.penality()
         grads = T.grad(cost, self.ae.params)
 
         update_vars = []

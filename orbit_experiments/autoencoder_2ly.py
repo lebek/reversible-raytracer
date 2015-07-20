@@ -52,7 +52,7 @@ class Autoencoder2ly():
 
     def encoder(self, X):
 
-        h1 = T.tanh(T.dot(X , self.W0) + self.l1_biases)
+        h1 = (T.dot(X , self.W0) + self.l1_biases)
         h2 = T.tanh(T.dot(h1, self.W1) + self.l2_biases)
         #h2 = T.switch(h2<0, 0., h2)
 
@@ -107,7 +107,14 @@ class Autoencoder2ly():
                 dist = T.sqrt((center1[0] - center2[0])**2 + (center1[1] - center2[1])**2)
                 penflag = T.switch(dist < max_rad, 1, 0)
         
-                penTerms = T.sum(penflag * (np.pi * max_rad**2)*2)
+                #Computing the overlapping area of two circle (is not working...)
+                #R = radius1 
+                #r = radius2
+                #A = r**2 * T.arccos( (dist**2 + r**2 - R**2)/(2*dist*r)) \
+                #        + R**2 * T.arccos( (dist**2-R**2 +r**2) / (2*dist*R) )\
+                #        - 0.5 * T.sqrt((-dist + r +R)*(dist+r+R)*(dist-r+R)*(dist+r+R))
+        
+                penTerms = T.sum(penflag * (np.pi * max_rad**2)*2)# + (1-penflag) * A )
 
         return penTerms 
 
