@@ -81,3 +81,61 @@ class Autoencoder2ly():
 
         #Should be this when we have multiple inputs NxD
         #return T.mean(0.5* T.sum((X-reconImage)*(X-reconImage),axis=1))
+
+
+
+    def penality(self):
+
+        penTerms = []
+        objects = self.scene_obj.shapes
+        for i in xrange(len(objects)-1):
+
+            obj1 = objects[i] 
+            for j in xrange(i,len(objects)):
+
+                obj2 = objects[j]
+               
+                #Distance check between objects
+                center1 = obj1.o2w.m[:,3]
+                center2 = obj2.o2w.m[:,3]
+                radius1 = T.maximum(obj1.o2w.m[0,0], obj1.o2w.m[1,1])
+                radius2 = T.maximum(obj2.o2w.m[0,0], obj2.o2w.m[1,1])
+            
+                max_rad = T.maximum(radius1, radius2)
+                
+                #TODO remake it for batch
+                dist = T.sqrt((center1[0] - center2[0])**2 + (center1[1] - center2[1])**2)
+                penflag = T.switch(dist < max_rad, 1, 0)
+        
+                penTerms = T.sum(penflag * (np.pi * max_rad**2)*2)
+
+        return penTerms 
+
+
+    def out_of_boundary_penality(self):
+
+        penTerms = T.constant(0)
+        objects = self.scene_obj.shapes
+
+        for i in xrange(len(objects)):
+
+            obj1    = objects[i] 
+            rf      = obj1.w2o(self.scene_obj.camera.rays)
+            ttt     = obj1._hit(rf.rays,rf.origin) 
+            penflag = T.switch(T.sum(ttt) <= 0, 1, 0)
+            penTerms = penTerms + penflag * 100 
+          
+        return penTerms
+                
+
+
+
+
+
+
+
+
+
+
+
+
