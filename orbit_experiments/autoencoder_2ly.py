@@ -81,3 +81,7 @@ class Autoencoder2ly():
 
         #Should be this when we have multiple inputs NxD
         #return T.mean(0.5* T.sum((X-reconImage)*(X-reconImage),axis=1))
+
+
+
+
