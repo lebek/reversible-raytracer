@@ -32,36 +32,36 @@ shapes = [
 ]
 
 light = Light((0., 0., 1.), (1., 1.,  1.))
-camera = Camera(x_dims, y_dims)
-#shader = DepthMapShader(6.1)
 shader = PhongShader()
-scene = Scene(shapes, [light], camera, shader)
-
-image = scene.build()
-render_fn = theano.function([], image, on_unused_input='ignore')
+cameras = [Camera(x_dims, y_dims, translate((0,5,0))),
+           Camera(x_dims, y_dims, translate((0,-5,0)))]
+scenes = [Scene(shapes, [light], cameras[0], shader),
+          Scene(shapes, [light], cameras[1], shader)]
+images = [scenes[0].build(), scenes[1].build()]
+render_fns = [theano.function([], images[0], on_unused_input='ignore'),
+              theano.function([], images[1], on_unused_input='ignore')]
 
 def random_orbit_position(v):
-   
+
     x=1;y=1;
-    z = 32 
+    z = 32
     x = (1 if rand() > 0.5 else -1) * rand()
-    y = (1 if rand() > 0.5 else -1) * np.sqrt(1.0 - x**2) 
-    x = x * 3 * 4  
-    y = y * 3 * 4 
+    y = (1 if rand() > 0.5 else -1) * np.sqrt(1.0 - x**2)
+    x = x * 3 * 4
+    y = y * 3 * 4
     v.set_value(np.asarray([x, y, z], dtype=theano.config.floatX))
     return (x,y,z)
 
-targets = np.zeros((n, 3), dtype=theano.config.floatX)
-dataset = np.zeros((n, x_dims, y_dims, 3), dtype=np.uint8)
+targets = np.zeros((n, 2, 3), dtype=theano.config.floatX)
+dataset = np.zeros((n, 2, x_dims, y_dims, 3), dtype=np.uint8)
 for i in range(n):
     target = random_orbit_position(center1)
     #random_transform(center2)
-    render = render_fn()
-    dataset[i] = (render * 255).astype(np.uint8)
-    targets[i] = target
-    draw('orbit_dataset/%d.png' % (i,), render)
+    for fidx, fn in enumerate(render_fns):
+        render = fn()
+        dataset[i,fidx] = (render * 255).astype(np.uint8)
+        targets[i,fidx] = target
+        draw('orbit_dataset/%d_%d.png' % (i,fidx,), render)
 
 np.savez('orbit_dataset', dataset)
 np.savez('orbit_target', target)
-
-
