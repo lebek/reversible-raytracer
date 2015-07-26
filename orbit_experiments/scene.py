@@ -53,10 +53,12 @@ class Scene:
 
 
 class Camera:
-    def __init__(self, x_dims, y_dims):
+    def __init__(self, x_dims, y_dims, o2w):
         self.look_at = np.asarray([0,0,1.], dtype='float32')
         self.x_dims = x_dims
         self.y_dims = y_dims
+        self.o2w = o2w
+        self.w2o = o2w.inverse()
 
     def make_rays(self, x_dims, y_dims, sampleDist_x=None, sampleDist_y=None):
         # this should be rewritten in theano - currently we can't do any
@@ -70,9 +72,12 @@ class Camera:
                                         y_dims, x_dims, 1).repeat(3, 2))
 
         rays = np.asarray(rays, dtype=theano.config.floatX)
-        if sampleDist_x is not None: rays[:,:,0] = rays[:,:,0] + sampleDist_x / x_dims
-        if sampleDist_y is not None: rays[:,:,1] = rays[:,:,1] + sampleDist_y / y_dims
-        return RayField(T.as_tensor_variable([0., 0., 0.]), T.as_tensor_variable(rays))
+        if sampleDist_x is not None:
+            rays[:,:,0] = rays[:,:,0] + sampleDist_x / x_dims
+        if sampleDist_y is not None:
+            rays[:,:,1] = rays[:,:,1] + sampleDist_y / y_dims
+
+        return self.o2w(RayField([0., 0., 0.], rays))
 
 
 class Light:
@@ -99,4 +104,3 @@ class Material:
         self.ka = T.as_tensor_variable(ka)
         self.color = T.as_tensor_variable(color)
         self.shininess = T.as_tensor_variable(shininess)
-
