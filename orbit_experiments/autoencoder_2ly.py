@@ -84,8 +84,7 @@ class Autoencoder2ly():
         reconImage_l, reconImage_r = self.decoder(robjsl, robjsr)
         reconImage_l = reconImage_l[1].flatten()
         reconImage_r = reconImage_r[1].flatten()
-        return T.sum((Xl-reconImage_l)*(Xr-reconImage_r)) #- 0.00001 * T.sum((robjs[0][0] + robjs[0][1])**2)
-
+        return T.sum((Xl-reconImage_l)*(Xl-reconImage_l)) + T.sum((Xr-reconImage_r)*(Xr-reconImage_r))
 
         #Should be this when we have multiple inputs NxD
         #return T.mean(0.5* T.sum((X-reconImage)*(X-reconImage),axis=1))

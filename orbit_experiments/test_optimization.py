@@ -132,8 +132,8 @@ def test_2images(epsilon,
                                                         train_data[1,1].dimshuffle('x',0))[1][0].flatten())
 
     center = get_center1()
-    imsave('output/two_imgs/1_test_balls0.png', get_recon1().reshape(D,D))
-    imsave('output/two_imgs/2_test_balls0.png', get_recon2().reshape(D,D))
+    imsave('output/two_imgs/1_test_balls0.png', get_recon1()[0].reshape(D,D,3))
+    imsave('output/two_imgs/2_test_balls0.png', get_recon2()[0].reshape(D,D,3))
     print '...Initial center1 (%g,%g,%g)' % (center[0], center[1], center[2])
 
     import pdb; pdb.set_trace()
@@ -147,8 +147,8 @@ def test_2images(epsilon,
 
 
             if n % 100 == 0 or n < 5:
-                center1 = get_center1()
-                center2 = get_center2()
+                center1 = get_center1()[0].reshape(D,D,3)
+                center2 = get_center2()[0].reshape(D,D,3)
                 print '...Epoch %d Train loss %g, Center (%g, %g, %g), Center (%g, %g, %g)' \
                     % (n, train_loss, center1[0], center1[1], center1[2], center2[0], center2[1], center2[2])
 
@@ -168,11 +168,11 @@ if __name__ == '__main__':
     if A:
         test_1image()
     else: 
-        ae_type      = 'lae'
+        ae_type      = 'ae'
         if ae_type=='vae': #Note: training with VAE doesn't work yet
             epsilon      = 0.0000001 
-        elif ae_type=='lae':
-            epsilon      = 0.00002
+        elif ae_type=='ae':
+            epsilon      = 0.000002
         else:
             epsilon      = 0.00002
         test_2images(epsilon, ae_type=ae_type)
