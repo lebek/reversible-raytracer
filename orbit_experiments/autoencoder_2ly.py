@@ -10,8 +10,11 @@ CWEIGHT=0
 CBIAS  =1
 RWEIGHT=2
 RBIAS  =3
-CAM1LOC = translate((0, 1.5,0))
-CAM2LOC = translate((0,-1.5,0))
+CAM1LOC = translate((0, 3,0))
+CAM2LOC = translate((0,-3,0))
+CAM1DIR = np.asarray([0,-3,12], dtype='float32')
+CAM2DIR = np.asarray([0, 3,12], dtype='float32')
+
 
 class Autoencoder2ly():
 
@@ -77,7 +80,8 @@ class Autoencoder2ly():
         return rvars_l, rvars_r
 
     def decoder(self, robjs_l, robjs_r):
-        return self.scene(self.capsules, robjs_l, CAM1LOC), self.scene(self.capsules, robjs_r, CAM2LOC)
+        return self.scene(self.capsules, robjs_l, CAM1LOC, CAM1DIR), \
+                self.scene(self.capsules, robjs_r, CAM2LOC, CAM2DIR)
 
     def cost(self,  Xl, Xr):
         robjsl, robjsr = self.encoder(Xl.dimshuffle('x',0), Xr.dimshuffle('x',0))
@@ -88,7 +92,6 @@ class Autoencoder2ly():
 
         #Should be this when we have multiple inputs NxD
         #return T.mean(0.5* T.sum((X-reconImage)*(X-reconImage),axis=1))
-
 
 
     def penality(self):

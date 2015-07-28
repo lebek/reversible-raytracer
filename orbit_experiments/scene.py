@@ -53,8 +53,8 @@ class Scene:
 
 
 class Camera:
-    def __init__(self, x_dims, y_dims, o2w):
-        self.look_at = np.asarray([0,0,1.], dtype='float32')
+    def __init__(self, x_dims, y_dims, o2w, camera_dir):
+        self.look_at = camera_dir#np.asarray([0,0,1.], dtype='float32')
         self.x_dims = x_dims
         self.y_dims = y_dims
         self.o2w = o2w

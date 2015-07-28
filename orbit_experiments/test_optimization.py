@@ -14,7 +14,7 @@ from shader import *
 from optimize import *
 
 
-def scene(capsules, obj_params, cam_loc):
+def scene(capsules, obj_params, cam_loc, cam_dir):
 
     shapes = []
     #TODO move the material information to attribute of capsule instance
@@ -36,7 +36,7 @@ def scene(capsules, obj_params, cam_loc):
 
     shapes.append(Sphere(translate(center2) * scale((6, 6, 6)), material2))
     light = Light((-0., -0., 1), (1., 1., 1.)) # (0.961, 1., 0.87)
-    camera = Camera(img_sz, img_sz, cam_loc)
+    camera = Camera(img_sz, img_sz, cam_loc, cam_dir)
     shader = PhongShader()
     #shader = DepthMapShader()
 
@@ -136,7 +136,6 @@ def test_2images(epsilon,
     imsave('output/two_imgs/2_test_balls0.png', get_recon2()[0].reshape(D,D,3))
     print '...Initial center1 (%g,%g,%g)' % (center[0], center[1], center[2])
 
-    import pdb; pdb.set_trace()
     n=0;
     while (n<num_epoch):
         n+=1
@@ -147,14 +146,14 @@ def test_2images(epsilon,
 
 
             if n % 100 == 0 or n < 5:
-                center1 = get_center1()[0].reshape(D,D,3)
-                center2 = get_center2()[0].reshape(D,D,3)
+                center1 = get_center1()
+                center2 = get_center2()
                 print '...Epoch %d Train loss %g, Center (%g, %g, %g), Center (%g, %g, %g)' \
                     % (n, train_loss, center1[0], center1[1], center1[2], center2[0], center2[1], center2[2])
 
         if n % 100 == 0 or n < 5:   
-            imsave('output/two_imgs/1_test_balls%d.png' % (n,), get_recon1())
-            imsave('output/two_imgs/2_test_balls%d.png' % (n,), get_recon2())
+            imsave('output/two_imgs/1_test_balls%d.png' % (n,), get_recon1()[0].reshape(D,D,3))
+            imsave('output/two_imgs/2_test_balls%d.png' % (n,), get_recon2()[0].reshape(D,D,3))
  
     pass
    
@@ -172,7 +171,7 @@ if __name__ == '__main__':
         if ae_type=='vae': #Note: training with VAE doesn't work yet
             epsilon      = 0.0000001 
         elif ae_type=='ae':
-            epsilon      = 0.000002
+            epsilon      = 0.0002
         else:
             epsilon      = 0.00002
         test_2images(epsilon, ae_type=ae_type)

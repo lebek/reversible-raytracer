@@ -33,8 +33,8 @@ shapes = [
 
 light = Light((0., 0., 1.), (1., 1.,  1.))
 shader = PhongShader()
-cameras = [Camera(x_dims, y_dims, translate((0, 1.5,0))),
-           Camera(x_dims, y_dims, translate((0,-1.5,0)))]
+cameras = [Camera(x_dims, y_dims, translate((0, 3,0)),np.asarray([0,-3,12], dtype='float32')  ),
+           Camera(x_dims, y_dims, translate((0,-3,0)),np.asarray([0, 3,12], dtype='float32')  )]
 scenes = [Scene(shapes, [light], cameras[0], shader),
           Scene(shapes, [light], cameras[1], shader)]
 images = [scenes[0].build(), scenes[1].build()]
