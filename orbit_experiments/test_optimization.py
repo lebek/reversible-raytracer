@@ -14,8 +14,7 @@ from shader import *
 from optimize import *
 
 
-
-def scene(capsules, obj_params):
+def scene(capsules, obj_params, cam_loc):
 
     shapes = []
     #TODO move the material information to attribute of capsule instance
@@ -37,7 +36,7 @@ def scene(capsules, obj_params):
 
     shapes.append(Sphere(translate(center2) * scale((6, 6, 6)), material2))
     light = Light((-0., -0., 1), (1., 1., 1.)) # (0.961, 1., 0.87)
-    camera = Camera(img_sz, img_sz)
+    camera = Camera(img_sz, img_sz, cam_loc)
     shader = PhongShader()
     #shader = DepthMapShader()
 
@@ -110,32 +109,34 @@ def test_2images(epsilon,
     data = data.astype('float32')
     num_points = 3
     train_data = data[2:2+num_points ,:,:,:] 
-    N,D,D,K = train_data.shape
-    train_data = theano.shared(train_data.reshape(N, D*D*K))
+    N1,N2,D,D,K = train_data.shape
+    train_data = theano.shared(train_data.reshape(N1, N2,D*D*K))
     global img_sz 
     img_sz = D 
 
     #ae = LinEncoder(scene, img_sz*img_sz*3, 300,  num_capsule)
-    #ae = Autoencoder2ly(scene, img_sz*img_sz*3, 600, 30, num_capsule)
-    ae = Conv_encoder(scene, img_sz*img_sz*3, num_capsule)
+    ae = Autoencoder2ly(scene, img_sz*img_sz*3, 600, 30, num_capsule)
+    #ae = Conv_encoder(scene, img_sz*img_sz*3, num_capsule)
     #ae = VAE(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
     #ae = Autoencoder(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
 
     opt = MGDAutoOptimizer(ae)
-
     train_ae = opt.optimize(train_data, lam)
     #train_aeADAM = opt.optimizeADAM(train_data)
 
-    get_recon1 = theano.function([], ae.get_reconstruct(train_data[0]))
-    get_recon2 = theano.function([], ae.get_reconstruct(train_data[1]))
-    get_center1= theano.function([], ae.encoder(train_data[0].dimshuffle('x',0))[0].flatten())
-    get_center2= theano.function([], ae.encoder(train_data[1].dimshuffle('x',0))[0].flatten())
+    get_recon1 = theano.function([], ae.get_reconstruct(train_data[0,0], train_data[0,1]))
+    get_recon2 = theano.function([], ae.get_reconstruct(train_data[1,0], train_data[1,1]))
+    get_center1= theano.function([], ae.encoder(train_data[0,0].dimshuffle('x',0), \
+                                                        train_data[0,1].dimshuffle('x',0))[0][0].flatten())
+    get_center2= theano.function([], ae.encoder(train_data[1,0].dimshuffle('x',0), \
+                                                        train_data[1,1].dimshuffle('x',0))[1][0].flatten())
 
     center = get_center1()
-    imsave('output/two_imgs/1_test_balls0.png', get_recon1())
-    imsave('output/two_imgs/2_test_balls0.png', get_recon2())
+    imsave('output/two_imgs/1_test_balls0.png', get_recon1().reshape(D,D))
+    imsave('output/two_imgs/2_test_balls0.png', get_recon2().reshape(D,D))
     print '...Initial center1 (%g,%g,%g)' % (center[0], center[1], center[2])
-    print '...Pen %g' % (ae.penalty().eval())
+
+    import pdb; pdb.set_trace()
     n=0;
     while (n<num_epoch):
         n+=1

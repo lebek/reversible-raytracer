@@ -3,12 +3,15 @@ import theano.tensor as T
 import numpy as np
 from util import *
 from capsule import *
+from transform import *
 
 #CONSTANT
 CWEIGHT=0
 CBIAS  =1
 RWEIGHT=2
 RBIAS  =3
+CAM1LOC = translate((0, 1.5,0))
+CAM2LOC = translate((0,-1.5,0))
 
 class Autoencoder2ly():
 
@@ -46,37 +49,42 @@ class Autoencoder2ly():
         return params
 
 
-    def get_reconstruct(self,X):
-        robjs = self.encoder(X.dimshuffle('x',0))
-        return self.decoder(robjs)
+    def get_reconstruct(self,Xl, Xr):
+        robjsl, robjsr = self.encoder(Xl.dimshuffle('x',0), Xr.dimshuffle('x',0))
+        reconImage_l, reconImage_r = self.decoder(robjsl, robjsr)
+        reconImage_l = reconImage_l[1].flatten()
+        reconImage_r = reconImage_r[1].flatten()
+        return reconImage_l, reconImage_r
 
-    def encoder(self, X):
+    def encoder(self, Xl, Xr):
 
-        h1 = T.tanh(T.dot(X , self.W0) + self.l1_biases)
-        h2 = T.tanh(T.dot(h1, self.W1) + self.l2_biases)
-        #h2 = T.switch(h2<0, 0., h2)
+        h1l = T.tanh(T.dot(Xl, self.W0) + self.l1_biases)
+        h2l = T.tanh(T.dot(h1l, self.W1) + self.l2_biases)
 
-        rvars = []
+        h1r = T.tanh(T.dot(Xr, self.W0) + self.l1_biases)
+        h2r = T.tanh(T.dot(h1r, self.W1) + self.l2_biases)
+
+        rvars_l = []; rvars_r = []
         #TODO For loop needs to be replaced with scan to make it faster
         for item_i in xrange(len(self.capsules)):
-            center = T.dot(h2, self.capsules[item_i].params[CWEIGHT]) \
-                                    + self.capsules[item_i].cbias
-            #center = T.set_subtensor(center[:,2], T.nnet.softplus(center[:,2]))
-            center = T.set_subtensor(center[:,2], T.switch(center[:,2]<0, 0, center[:,2]))
-            rvars.append(center.flatten()) 
-            #scale  = T.dot(h3, self.capsules[item_i].params[RWEIGHT]) \
-            #                                + self.capsules[item_i].params[RBIAS]
-            #rvars.append(T.stacklists([center, scale])) 
+            center_l = T.dot(h2l, self.capsules[item_i].params[CWEIGHT]) + self.capsules[item_i].cbias
+            center_l = T.set_subtensor(center_l[:,2], T.switch(center_l[:,2]<0, 0, center_l[:,2]))
+            center_r = T.dot(h2r, self.capsules[item_i].params[CWEIGHT]) + self.capsules[item_i].cbias
+            center_r = T.set_subtensor(center_r[:,2], T.switch(center_r[:,2]<0, 0, center_r[:,2]))
+            rvars_l.append(center_l.flatten()) 
+            rvars_r.append(center_r.flatten()) 
 
-        return rvars
+        return rvars_l, rvars_r
 
-    def decoder(self, robjs):
-        return self.scene(self.capsules, robjs)
+    def decoder(self, robjs_l, robjs_r):
+        return self.scene(self.capsules, robjs_l, CAM1LOC), self.scene(self.capsules, robjs_r, CAM2LOC)
 
-    def cost(self,  X):
-        robjs = self.encoder(X.dimshuffle('x',0))
-        reconImage = self.decoder(robjs).flatten()
-        return T.sum((X-reconImage)*(X-reconImage)) #- 0.00001 * T.sum((robjs[0][0] + robjs[0][1])**2)
+    def cost(self,  Xl, Xr):
+        robjsl, robjsr = self.encoder(Xl.dimshuffle('x',0), Xr.dimshuffle('x',0))
+        reconImage_l, reconImage_r = self.decoder(robjsl, robjsr)
+        reconImage_l = reconImage_l[1].flatten()
+        reconImage_r = reconImage_r[1].flatten()
+        return T.sum((Xl-reconImage_l)*(Xr-reconImage_r)) #- 0.00001 * T.sum((robjs[0][0] + robjs[0][1])**2)
 
 
         #Should be this when we have multiple inputs NxD

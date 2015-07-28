@@ -69,27 +69,28 @@ class MGDAutoOptimizer:
     
         i  = T.iscalar('i')
         lr = T.fscalar('lr');
-        X  = T.fvector('X')
+        Xl = T.fvector('Xl')
+        Xr = T.fvector('Xr')
 
-        cost = self.ae.cost(X)  + lam * self.ae.penalty()
+        cost = self.ae.cost(Xl, Xr)  #+ lam * self.ae.penalty()
         grads = T.grad(cost, self.ae.params)
         update_vars = []
 
         for var, gvar in zip(self.ae.params, grads):
             if var.get_value().ndim == 1:
                 update_vars.append((var, var - 0.1*lr*gvar))
-            elif var.get_value().ndim > 1:
-                new_param = var - lr*gvar
-                len_W = T.sqrt(T.sum(new_param**2, axis=0))
-                desired_W = T.clip(len_W, 0., fixed_length)
-                ratio = desired_W  / (len_W + 1e-7)
-                new_param = new_param * ratio
-                update_vars.append((var, new_param))
+            #elif var.get_value().ndim > 1:
+            #    new_param = var - lr*gvar
+            #    len_W = T.sqrt(T.sum(new_param**2, axis=0))
+            #    desired_W = T.clip(len_W, 0., fixed_length)
+            #    ratio = desired_W  / (len_W + 1e-7)
+            #    new_param = new_param * ratio
+            #    update_vars.append((var, new_param))
             else:
                 update_vars.append((var, var - lr*gvar))
 
         opt = theano.function([i, lr], cost, updates=update_vars,
-                              givens={X: train_data[i]})#, allow_input_downcast=True)
+                givens={Xl: train_data[i,0], Xr: train_data[i,1]})#, allow_input_downcast=True)
 
         #get_grad = theano.function([], grads[3], givens={X:train_data[0]}, allow_input_downcast=True)
         #get_gradb = theano.function([], grads[-1], givens={X:train_data[0]}, allow_input_downcast=True)

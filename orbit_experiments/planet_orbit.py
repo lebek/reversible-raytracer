@@ -8,8 +8,8 @@ import theano
 from util import *
 
 n = 100
-x_dims = 64
-y_dims = 64
+x_dims = 32
+y_dims = 32 
 
 # Generates n x_dims-by-y_dims image samples containing 2 spheres with
 # randomly assigned centers. Saves the result in dataset.npz
@@ -33,8 +33,8 @@ shapes = [
 
 light = Light((0., 0., 1.), (1., 1.,  1.))
 shader = PhongShader()
-cameras = [Camera(x_dims, y_dims, translate((0,5,0))),
-           Camera(x_dims, y_dims, translate((0,-5,0)))]
+cameras = [Camera(x_dims, y_dims, translate((0, 1.5,0))),
+           Camera(x_dims, y_dims, translate((0,-1.5,0)))]
 scenes = [Scene(shapes, [light], cameras[0], shader),
           Scene(shapes, [light], cameras[1], shader)]
 images = [scenes[0].build(), scenes[1].build()]
@@ -65,3 +65,6 @@ for i in range(n):
 
 np.savez('orbit_dataset', dataset)
 np.savez('orbit_target', target)
+
+
+
