@@ -8,8 +8,8 @@ import theano
 from util import *
 
 n = 100
-x_dims = 32
-y_dims = 32 
+x_dims = 64
+y_dims = 64 
 
 # Generates n x_dims-by-y_dims image samples containing 2 spheres with
 # randomly assigned centers. Saves the result in dataset.npz
@@ -21,9 +21,9 @@ if not os.path.exists('orbit_dataset'):
 material1 = Material((0.0, 0.9, 0.0), 0.3, 0.7, 0.5, 50.)
 material2 = Material((0.9, 0.0, 0.0), 0.3, 0.9, 0.4, 50.)
 
-center1 = theano.shared(np.asarray([0, 0, 32], dtype=theano.config.floatX),
+center1 = theano.shared(np.asarray([0, 0, 48], dtype=theano.config.floatX),
                         borrow=True)
-center2 = theano.shared(np.asarray([0, 0, 32], dtype=theano.config.floatX),
+center2 = theano.shared(np.asarray([0, 0, 48], dtype=theano.config.floatX),
                         borrow=True)
 
 shapes = [
@@ -33,8 +33,8 @@ shapes = [
 
 light = Light((0., 0., 1.), (1., 1.,  1.))
 shader = PhongShader()
-cameras = [Camera(x_dims, y_dims, translate((0, 3,0)),np.asarray([0,-3,12], dtype='float32')  ),
-           Camera(x_dims, y_dims, translate((0,-3,0)),np.asarray([0, 3,12], dtype='float32')  )]
+cameras = [Camera(x_dims, y_dims, translate((0, 2.5,0)),np.asarray([0,0,1], dtype='float32')  ),
+           Camera(x_dims, y_dims, translate((0,-2.5,0)),np.asarray([0,0,1], dtype='float32')  )]
 scenes = [Scene(shapes, [light], cameras[0], shader),
           Scene(shapes, [light], cameras[1], shader)]
 images = [scenes[0].build(), scenes[1].build()]
@@ -47,8 +47,8 @@ def random_orbit_position(v):
     z = 32
     x = (1 if rand() > 0.5 else -1) * rand()
     y = (1 if rand() > 0.5 else -1) * np.sqrt(1.0 - x**2)
-    x = x * 3 * 4
-    y = y * 3 * 4
+    x = x * 3 * 3
+    y = y * 3 * 3
     v.set_value(np.asarray([x, y, z], dtype=theano.config.floatX))
     return (x,y,z)
 

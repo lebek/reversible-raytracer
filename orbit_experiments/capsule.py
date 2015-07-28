@@ -9,7 +9,7 @@ class Capsule():
 
         self.name = name
         #bias = np.asarray([-2,2, 10.5 * num_caps,3.5,3.5,3.5], dtype=theano.config.floatX)/ num_caps
-        self.cbias = theano.shared(np.asarray([0, 0, 13], dtype=theano.config.floatX)/ num_caps, borrow=True, name='cbias')
+        self.cbias = theano.shared(np.asarray([0, 0, 20], dtype=theano.config.floatX)/ num_caps, borrow=True, name='cbias')
         #rbias = np.asarray([ 2, 2, 2], dtype=theano.config.floatX)/ num_caps
         self.params = [self.init_capsule_cweight(n_hidden)]#, self.bias]#,\
                        #self.init_capsule_rweight(n_hidden), theano.shared(rbias, borrow=True, name='rbias')]

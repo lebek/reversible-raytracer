@@ -100,9 +100,10 @@ class MGDAutoOptimizer:
             beta1 = 0.1,beta2 = 0.001,epsilon = 1e-8, l = 1e-8):
 
         lr = T.fscalar('lr');
-        X = T.fvector('X')
-        #i = T.lscalar('i')
-        cost = self.ae.cost(X)
+        Xl = T.fvector('Xl')
+        Xr = T.fvector('Xr')
+
+        cost = self.ae.cost(Xl, Xr) 
         grads = T.grad(cost, self.ae.params)
 
         '''ADAM Code from
@@ -126,7 +127,7 @@ class MGDAutoOptimizer:
             v_t_bias = v_t/(1-(1-beta2)**self.t)
             updates.append((param,param - lr*m_t_bias/(T.sqrt(v_t_bias)+epsilon)))
 
-        opt = theano.function([lr], cost, updates=updates, givens={X: train_data[0]})
+        opt = theano.function([lr], cost, updates=updates, givens={Xl: train_data[i,0], Xr: train_data[i,1]})
 
         #get_grad  = theano.function([], grads[-2], givens={X:train_data[0]})
         #get_gradb = theano.function([], grads[-1], givens={X:train_data[0]})

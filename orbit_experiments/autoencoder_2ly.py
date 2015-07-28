@@ -10,10 +10,10 @@ CWEIGHT=0
 CBIAS  =1
 RWEIGHT=2
 RBIAS  =3
-CAM1LOC = translate((0, 3,0))
-CAM2LOC = translate((0,-3,0))
-CAM1DIR = np.asarray([0,-3,12], dtype='float32')
-CAM2DIR = np.asarray([0, 3,12], dtype='float32')
+CAM1LOC = translate((0, 2.5,0))
+CAM2LOC = translate((0,-2.5,0))
+CAM1DIR = np.asarray([0,0,1], dtype='float32')
+CAM2DIR = np.asarray([0,0,1], dtype='float32')
 
 
 class Autoencoder2ly():
