@@ -69,10 +69,9 @@ class MGDAutoOptimizer:
     
         i  = T.iscalar('i')
         lr = T.fscalar('lr');
-        Xl = T.fvector('Xl')
-        Xr = T.fvector('Xr')
-
-        cost = self.ae.cost(Xl, Xr)  #+ lam * self.ae.penalty()
+        Xl = T.fmatrix('Xl')
+        Xr = T.fmatrix('Xr')
+        cost = self.ae.cost(Xl[0], Xr[0]) + self.ae.cost(Xl[1], Xr[1]) + self.ae.cost(Xl[2], Xr[2])  
         grads = T.grad(cost, self.ae.params)
         update_vars = []
 
@@ -90,7 +89,7 @@ class MGDAutoOptimizer:
                 update_vars.append((var, var - lr*gvar))
 
         opt = theano.function([i, lr], cost, updates=update_vars,
-                givens={Xl: train_data[i,0], Xr: train_data[i,1]})#, allow_input_downcast=True)
+                givens={Xl: train_data[i:i+3,0], Xr: train_data[i:i+3,1]})#, allow_input_downcast=True)
 
         #get_grad = theano.function([], grads[3], givens={X:train_data[0]}, allow_input_downcast=True)
         #get_gradb = theano.function([], grads[-1], givens={X:train_data[0]}, allow_input_downcast=True)

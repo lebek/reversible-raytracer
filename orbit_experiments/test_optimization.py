@@ -106,9 +106,10 @@ def test_2images(epsilon,
     if not os.path.exists('./output/two_imgs'):
         os.makedirs('./output/two_imgs')
 
+    import pdb; pdb.set_trace()
     data = np.load('orbit_dataset.npz')['arr_0'] / 255.0
     data = data.astype('float32')
-    num_points = 4
+    num_points = 9
     train_data = data[2:2+num_points ,:,:,:] 
     N1,N2,D,D,K = train_data.shape
     train_data = theano.shared(train_data.reshape(N1, N2,D*D*K))
@@ -116,7 +117,7 @@ def test_2images(epsilon,
     img_sz = D 
 
     #ae = LinEncoder(scene, img_sz*img_sz*3, 300,  num_capsule)
-    ae = Autoencoder2ly(scene, img_sz*img_sz*3, 600, 30, num_capsule)
+    ae = Autoencoder2ly(scene, img_sz*img_sz*3, 1000, 100, num_capsule)
     #ae = Conv_encoder(scene, img_sz*img_sz*3, num_capsule)
     #ae = VAE(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
     #ae = Autoencoder(scene, img_sz*img_sz*3, 300, 30, 10, num_capsule)
@@ -138,11 +139,12 @@ def test_2images(epsilon,
     print '...Initial center1 (%g,%g,%g)' % (center[0], center[1], center[2])
 
     n=0;
+    batch_sz = 3;
     while (n<num_epoch):
         n+=1
-        eps = get_epsilon(epsilon, num_epoch, n)
+        eps = get_epsilon(epsilon, 500, n)
         train_loss = 0 
-        for i in xrange(num_points):
+        for i in xrange(num_points - batch_sz +1):
             train_loss += train_ae(i, eps) 
 
 
@@ -172,7 +174,7 @@ if __name__ == '__main__':
         if ae_type=='vae': #Note: training with VAE doesn't work yet
             epsilon      = 0.0000001 
         elif ae_type=='ae':
-            epsilon      = 0.00001
+            epsilon      = 0.000001
         else:
             epsilon      = 0.00002
         test_2images(epsilon, ae_type=ae_type)
